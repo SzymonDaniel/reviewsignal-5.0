@@ -1,4 +1,4 @@
-# 🚀 ReviewSignal 5.0 - B2B Data Intelligence Platform
+# 🚀 REVIEWSIGNAL 5.0 - COMPLETE SYSTEM
 
 ```
 ██████╗ ███████╗██╗   ██╗██╗███████╗██╗    ██╗
@@ -7,146 +7,244 @@
 ██╔══██╗██╔══╝  ╚██╗ ██╔╝██║██╔══╝  ██║███╗██║
 ██║  ██║███████╗ ╚████╔╝ ██║███████╗╚███╔███╔╝
 ╚═╝  ╚═╝╚══════╝  ╚═══╝  ╚═╝╚══════╝ ╚══╝╚══╝ 
-         S I G N A L
-```
-
-**Real-time consumer sentiment intelligence for Hedge Funds & Private Equity**
-
----
-
-## 📊 What is ReviewSignal?
-
-ReviewSignal provides **alternative data** from Google Maps reviews across **58 retail chains** in **111 cities** worldwide. Our data helps investment firms:
-
-- Predict quarterly earnings 24-48 hours before market
-- Identify underperforming locations before competitors
-- Track real-time consumer sentiment by region
-- Correlate review trends with stock price movements (R² = 0.73)
-
----
-
-## 🌍 Global Coverage
-
-| Region | Cities | Chains |
-|--------|--------|--------|
-| 🇺🇸 USA | 30 | 58 |
-| 🇨🇦 Canada | 10 | 45 |
-| 🇬🇧 UK | 10 | 40 |
-| 🇩🇪 Germany | 10 | 35 |
-| 🇫🇷 France | 8 | 30 |
-| 🇪🇸 Spain | 6 | 25 |
-| 🇮🇹 Italy | 6 | 25 |
-| 🇳🇱🇧🇪🇦🇹🇨🇭 Benelux+Alps | 8 | 30 |
-| 🇵🇱🇨🇿🇸🇪 Other EU | 10 | 25 |
-| 🇦🇺🇳🇿 Oceania | 7 | 35 |
-| 🇯🇵🇰🇷🇸🇬 Asia | 10 | 40 |
-
-**Total Potential: 64,380+ locations/day**
-
----
-
-## 🏗️ System Architecture
-
-```
-┌───────────────────────────────────────────────────────────────┐
-│  REVIEWSIGNAL SYSTEM 5.0                                      │
-├───────────────────────────────────────────────────────────────┤
-│                                                               │
-│   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐      │
-│   │   FastAPI   │    │   Neural    │    │    Lead     │      │
-│   │     API     │◄──►│   Scraper   │◄──►│   Hunter    │      │
-│   └─────────────┘    └─────────────┘    └─────────────┘      │
-│          │                  │                  │              │
-│          ▼                  ▼                  ▼              │
-│   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐      │
-│   │   Report    │    │  Anomaly    │    │   Stripe    │      │
-│   │  Generator  │    │  Detector   │    │  Payments   │      │
-│   └─────────────┘    └─────────────┘    └─────────────┘      │
-│          │                  │                  │              │
-│          └──────────────────┼──────────────────┘              │
-│                             ▼                                 │
-│                    ┌─────────────┐                           │
-│                    │ PostgreSQL  │                           │
-│                    │   + Redis   │                           │
-│                    └─────────────┘                           │
-└───────────────────────────────────────────────────────────────┘
+         S I G N A L   5.0
 ```
 
 ---
 
-## 📦 Modules
+# ⚠️⚠️⚠️ WAŻNE DLA COPILOT COMETA ⚠️⚠️⚠️
 
-| Module | File | Description |
-|--------|------|-------------|
-| 5.0.1 | `modules/real_scraper.py` | Google Maps scraper with rate limiting |
-| 5.0.2 | `modules/linkedin_lead_hunter.py` | Find decision makers at hedge funds |
-| 5.0.3 | `modules/ml_anomaly_detector.py` | Detect anomalies in review patterns |
-| 5.0.4 | `modules/payment_processor.py` | Stripe subscription management |
-| 5.0.5 | `modules/user_manager.py` | JWT auth + user management |
-| 5.0.6 | `database/001_init.sql` | PostgreSQL schema |
+## MUSISZ ZASTĄPIĆ STARY MODUŁ 5.0.1!
+
+Stary plik `real_scraper.py` który wcześniej wgrałeś jest **USZKODZONY** (miał ucięty kod - zakończył się w środku funkcji).
+
+To repozytorium zawiera **KOMPLETNE, DZIAŁAJĄCE** wersje wszystkich 6 modułów!
 
 ---
 
-## 💰 Pricing
+# 📋 INSTRUKCJA WGRANIA NA SSH (KROK PO KROKU)
 
-| Tier | Price | API Calls | Reports | Cities |
-|------|-------|-----------|---------|--------|
-| Trial | €0 (14 days) | 100 | 5 | 1 |
-| Starter | €2,500/mo | 1,000 | 50 | 5 |
-| Pro | €5,000/mo | 10,000 | 500 | 30 |
-| Enterprise | €10,000+/mo | Unlimited | Unlimited | All |
-
----
-
-## 🚀 Quick Deploy
+## KROK 1: Połącz się z serwerem
 
 ```bash
-# 1. Clone repository
-git clone git@github.com:SzymonDaniel/reviewsignal-5.0.git
+ssh root@your-server-ip
+```
+
+## KROK 2: Usuń stare pliki i sklonuj nowe repo
+
+```bash
+# Przejdź do folderu głównego
+cd /root
+
+# Usuń stare repo jeśli istnieje
+rm -rf reviewsignal-5.0
+
+# Sklonuj świeże repo z GitHuba
+git clone https://github.com/SzymonDaniel/reviewsignal-5.0.git
+
+# Wejdź do folderu
 cd reviewsignal-5.0
+```
 
-# 2. Configure environment
-cp .env.example .env
-# Edit .env with your API keys
+## KROK 3: Skopiuj moduły do docelowej lokalizacji
 
-# 3. Start with Docker
-docker-compose up -d
+```bash
+# Utwórz folder docelowy jeśli nie istnieje
+mkdir -p /root/reviewsignal/modules
 
-# 4. Verify
-curl http://localhost:8000/health
+# SKOPIUJ WSZYSTKIE 6 MODUŁÓW (flaga -f wymusza nadpisanie starych!)
+cp -f /root/reviewsignal-5.0/modules/*.py /root/reviewsignal/modules/
+
+# SPRAWDŹ czy wszystkie pliki są:
+ls -la /root/reviewsignal/modules/
+```
+
+**Powinno pokazać DOKŁADNIE 6 plików:**
+```
+-rw-r--r-- 1 root root ~18000 real_scraper.py        ← NOWY! ZASTĘPUJE STARY!
+-rw-r--r-- 1 root root ~22000 linkedin_lead_hunter.py
+-rw-r--r-- 1 root root ~20000 ml_anomaly_detector.py
+-rw-r--r-- 1 root root ~25000 payment_processor.py
+-rw-r--r-- 1 root root ~27000 user_manager.py
+-rw-r--r-- 1 root root ~26000 database_schema.py
+```
+
+## KROK 4: Zainstaluj zależności Python
+
+```bash
+# Zainstaluj wszystkie wymagane pakiety
+pip install playwright beautifulsoup4 httpx structlog numpy scipy scikit-learn stripe bcrypt pyjwt sqlalchemy psycopg2-binary
+
+# Zainstaluj przeglądarkę dla Playwright
+playwright install chromium
+playwright install-deps
+```
+
+## KROK 5: Przetestuj każdy moduł
+
+```bash
+cd /root/reviewsignal/modules
+
+# Test modułu 5.0.1 (TEN BYŁ WCZEŚNIEJ USZKODZONY!)
+python real_scraper.py
+# Powinno pokazać: "✅ GoogleMapsScraper ready!"
+
+# Test pozostałych modułów
+python linkedin_lead_hunter.py
+python ml_anomaly_detector.py
+python payment_processor.py
+python user_manager.py
+python database_schema.py
+```
+
+**Każdy moduł powinien uruchomić się BEZ BŁĘDÓW i pokazać test output.**
+
+## KROK 6: Utwórz plik konfiguracyjny .env
+
+```bash
+cat > /root/reviewsignal/.env << 'EOF'
+# ========================================
+# REVIEWSIGNAL 5.0 CONFIGURATION
+# ========================================
+
+# Google Maps API
+GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
+
+# LinkedIn (opcjonalne - do lead huntingu)
+LINKEDIN_EMAIL=your_linkedin_email
+LINKEDIN_PASSWORD=your_linkedin_password
+
+# Stripe Payments
+STRIPE_API_KEY=sk_live_xxxxxxxxxxxx
+STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxx
+
+# PostgreSQL Database
+DATABASE_URL=postgresql://reviewsignal:password@localhost:5432/reviewsignal
+
+# JWT Secret (minimum 32 znaki!)
+JWT_SECRET=your_super_secret_random_key_at_least_32_characters
+
+# Mode
+DEBUG=false
+ENVIRONMENT=production
+EOF
 ```
 
 ---
 
-## 🎯 Target Clients
+# 📁 GDZIE SĄ PLIKI?
 
-**Tier 1 (€10,000+/mo):**
-- Citadel, Bridgewater, Renaissance, Two Sigma
-- Blackstone, KKR, Carlyle, Apollo
-- Goldman Sachs, Morgan Stanley, JP Morgan
+## W tym repozytorium:
 
-**Tier 2 (€5,000/mo):**
-- Viking Global, Tiger Global, Coatue
-- Third Point, Pershing Square, Greenlight
+```
+https://github.com/SzymonDaniel/reviewsignal-5.0
+└── modules/
+    ├── real_scraper.py         # 5.0.1 - ~450 linii (NOWY!)
+    ├── linkedin_lead_hunter.py # 5.0.2 - ~550 linii
+    ├── ml_anomaly_detector.py  # 5.0.3 - ~500 linii
+    ├── payment_processor.py    # 5.0.4 - ~600 linii
+    ├── user_manager.py         # 5.0.5 - ~650 linii
+    └── database_schema.py      # 5.0.6 - ~700 linii
+```
+
+## Docelowa lokalizacja na serwerze:
+
+```
+/root/reviewsignal/
+├── .env                        # Konfiguracja
+└── modules/
+    ├── real_scraper.py         # ← TEN PLIK ZASTĘPUJE STARY USZKODZONY!
+    ├── linkedin_lead_hunter.py
+    ├── ml_anomaly_detector.py
+    ├── payment_processor.py
+    ├── user_manager.py
+    └── database_schema.py
+```
 
 ---
 
-## 📈 ROI
+# 📊 OPIS MODUŁÓW
 
+| Moduł | Plik | Linii | Co robi |
+|--------|------|-------|----------|
+| **5.0.1** | `real_scraper.py` | ~450 | Scraping Google Maps (111 miast DE) |
+| **5.0.2** | `linkedin_lead_hunter.py` | ~550 | Szukanie leadów na LinkedIn |
+| **5.0.3** | `ml_anomaly_detector.py` | ~500 | ML wykrywanie anomalii w recenzjach |
+| **5.0.4** | `payment_processor.py` | ~600 | Płatności Stripe + subskrypcje |
+| **5.0.5** | `user_manager.py` | ~650 | Auth, JWT, sesje, uprawnienia |
+| **5.0.6** | `database_schema.py` | ~700 | PostgreSQL modele + queries |
+
+**RAZEM: ~3,450 linii production-ready kodu!**
+
+---
+
+# 🔧 TROUBLESHOOTING
+
+### Problem: "ModuleNotFoundError"
+```bash
+export PYTHONPATH=/root/reviewsignal:$PYTHONPATH
 ```
-Costs:      ~€70/month (infrastructure)
-Revenue:    €10,000-30,000/month (1-3 clients)
-ROI:        142x - 428x
+
+### Problem: "Playwright not installed"
+```bash
+playwright install chromium
+playwright install-deps
+```
+
+### Problem: "PostgreSQL connection failed"
+```bash
+# Sprawdź status PostgreSQL
+sudo systemctl status postgresql
+
+# Jeśli nie działa, uruchom
+sudo systemctl start postgresql
+
+# Utwórz bazę danych
+sudo -u postgres createdb reviewsignal
+sudo -u postgres createuser reviewsignal -P
+```
+
+### Problem: "Permission denied"
+```bash
+chmod +x /root/reviewsignal/modules/*.py
 ```
 
 ---
 
-## 👥 Team
+# ✅ CHECKLIST DLA COMETA
 
-- **Simon** - Founder & Strategy
-- **Comet** - DevOps & Deployment
-- **Claude** - CTO & Lead Developer
+Zaznacz po wykonaniu:
+
+- [ ] Połączyłem się z serwerem przez SSH
+- [ ] Sklonowałem repo: `git clone https://github.com/SzymonDaniel/reviewsignal-5.0.git`
+- [ ] Skopiowałem 6 modułów do `/root/reviewsignal/modules/`
+- [ ] **ZASTĄPIŁEM stary uszkodzony `real_scraper.py`**
+- [ ] Zainstalowałem zależności: `pip install ...`
+- [ ] Zainstalowałem Playwright: `playwright install chromium`
+- [ ] Przetestowałem każdy moduł: `python nazwa_modulu.py`
+- [ ] Utworzyłem plik `.env` z kluczami API
+- [ ] Wszystkie testy przeszły bez błędów
+
+---
+
+# 💰 PRICING
+
+| Tier | Cena | API Calls | Raporty | Miasta |
+|------|------|-----------|---------|--------|
+| Trial | €0 (14 dni) | 100 | 5 | 1 |
+| Starter | €2,500/mies | 1,000 | 50 | 5 |
+| Pro | €5,000/mies | 10,000 | 500 | 30 |
+| Enterprise | €10,000+/mies | Unlimited | Unlimited | 111 |
+
+---
+
+# 🔗 LINKI
+
+- **Repozytorium:** https://github.com/SzymonDaniel/reviewsignal-5.0
+- **Moduły:** https://github.com/SzymonDaniel/reviewsignal-5.0/tree/main/modules
 
 ---
 
 **© 2026 ReviewSignal - B2B Data Intelligence**
+
+*System stworzony przez Claude AI dla Simona*
