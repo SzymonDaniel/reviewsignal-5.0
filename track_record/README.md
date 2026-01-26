@@ -1,104 +1,63 @@
-# 📊 Track Record & Backtesting Module
+# 📊 Track Record + Backtesting Module
 
-## Overview
-Professional-grade track record and backtesting system for ReviewSignal hedge fund clients.
-Proves signal accuracy with auditable, verifiable performance metrics.
+## 🤖 INSTRUKCJA DLA COMET AI ASSISTANT
 
-## Architecture
+### Co to jest?
+Ten moduł służy do **udowodnienia hedge fundom**, że sygnały ReviewSignal DZIAŁAJĄ.
+Loguje każdy sygnał, oblicza performance, porównuje z benchmarkami.
+
+### Jak uruchomić?
+```bash
+cd track_record
+pip install -r requirements.txt
+python -m pytest tests/ -v
+```
+
+### Struktura modułu:
 ```
 track_record/
-├── core/                    # Core infrastructure
-│   ├── __init__.py
-│   ├── signal_logger.py     # Real-time signal logging
-│   ├── signal_types.py      # Signal type definitions
-│   └── storage.py           # Time-series storage
-├── performance/             # Performance calculation
-│   ├── __init__.py
-│   ├── returns.py           # Return calculations
-│   ├── metrics.py           # Sharpe, Sortino, etc.
-│   ├── drawdown.py          # Drawdown analysis
-│   └── benchmark.py         # Benchmark comparison
-├── backtesting/             # Backtesting engine
-│   ├── __init__.py
-│   ├── engine.py            # Main backtest engine
-│   ├── strategy.py          # Strategy definitions
-│   ├── data_loader.py       # Historical data loading
-│   ├── monte_carlo.py       # Monte Carlo simulation
-│   └── walk_forward.py      # Walk-forward optimization
-├── reports/                 # Report generation
-│   ├── __init__.py
-│   ├── pdf_generator.py     # PDF reports
-│   ├── html_generator.py    # HTML dashboards
-│   └── templates/           # Report templates
-├── api/                     # API endpoints
-│   ├── __init__.py
-│   ├── routes.py            # FastAPI routes
-│   └── schemas.py           # Pydantic schemas
-└── tests/                   # Test suite
-    ├── __init__.py
-    ├── test_signals.py
-    ├── test_performance.py
-    └── test_backtest.py
+├── core/
+│   ├── signal_logger.py      # Logowanie sygnałów BUY/SELL/HOLD
+│   ├── performance_calc.py   # Obliczanie returns, P&L
+│   ├── benchmark_compare.py  # Porównanie z S&P500, sektorami
+│   ├── sharpe_ratio.py       # Risk-adjusted returns
+│   └── drawdown_analyzer.py  # Max drawdown tracking
+├── backtesting/
+│   ├── historical_data.py    # Pobieranie historical prices
+│   ├── signal_replayer.py    # Replay sygnałów na historii
+│   ├── strategy_tester.py    # Test różnych strategii
+│   ├── monte_carlo.py        # Symulacje Monte Carlo
+│   └── walk_forward.py       # Walk-forward optimization
+├── reports/
+│   ├── report_generator.py   # PDF/HTML raporty
+│   └── templates/            # Szablony raportów
+├── models/
+│   └── signal_models.py      # Pydantic models
+├── database/
+│   └── signal_repository.py  # Persystencja sygnałów
+└── api/
+    └── track_record_api.py   # REST endpoints
 ```
 
-## Quick Start
-```python
-from track_record import SignalLogger, PerformanceTracker, BacktestEngine
+### Kluczowe metryki:
+- **Signal Accuracy**: % trafień (target: 65%+)
+- **Average Return**: średni return per sygnał
+- **Sharpe Ratio**: risk-adjusted (target: 1.5+)
+- **Max Drawdown**: maksymalny spadek (limit: -15%)
+- **Win/Loss Ratio**: stosunek wygranych do przegranych
 
-# Log a signal
-logger = SignalLogger()
-signal = logger.log_signal(
-    brand="SBUX",
-    signal_type="BUY",
-    confidence=0.85,
-    sentiment_score=4.2,
-    price_at_signal=98.50
-)
+### Jak Comet powinien rozszerzać ten kod:
+1. Dodaj więcej strategii w `strategy_tester.py`
+2. Rozszerz `monte_carlo.py` o więcej symulacji
+3. Dodaj nowe benchmarki w `benchmark_compare.py`
+4. Stwórz więcej szablonów raportów
 
-# Track performance
-tracker = PerformanceTracker()
-metrics = tracker.calculate_metrics(
-    start_date="2025-01-01",
-    end_date="2026-01-01"
-)
-print(f"Sharpe Ratio: {metrics.sharpe_ratio}")
-print(f"Win Rate: {metrics.win_rate}%")
+### API Endpoints:
+- `POST /api/v1/signals` - Log new signal
+- `GET /api/v1/signals/{id}` - Get signal details
+- `GET /api/v1/performance` - Get performance metrics
+- `GET /api/v1/backtest` - Run backtest
+- `GET /api/v1/reports` - Generate report
 
-# Run backtest
-engine = BacktestEngine()
-results = engine.run(
-    strategy="sentiment_momentum",
-    start_date="2024-01-01",
-    end_date="2025-12-31"
-)
-```
-
-## Key Metrics
-- **Signal Accuracy**: % of signals that were profitable
-- **Sharpe Ratio**: Risk-adjusted returns vs risk-free rate
-- **Sortino Ratio**: Downside risk-adjusted returns
-- **Max Drawdown**: Largest peak-to-trough decline
-- **Win/Loss Ratio**: Average win size vs average loss size
-- **Information Ratio**: Alpha vs tracking error
-
-## For Comet AI Assistant
-```
-INSTRUCTIONS FOR COMET:
-1. This module tracks ALL trading signals generated by ReviewSignal
-2. Every signal must be logged with: timestamp, brand, signal_type, confidence, price
-3. Performance is calculated daily and stored in TimescaleDB
-4. Backtests use historical sentiment data from /data/historical/
-5. Reports are generated weekly for hedge fund clients
-6. All code follows PEP 8 and has >90% test coverage
-```
-
-## Dependencies
-- pandas >= 2.0.0
-- numpy >= 1.24.0
-- scipy >= 1.10.0
-- yfinance >= 0.2.0
-- plotly >= 5.0.0
-- reportlab >= 4.0.0
-- fastapi >= 0.100.0
-- pydantic >= 2.0.0
-- pytest >= 7.0.0
+---
+**Autor:** Simon | **Wersja:** 1.0 | **Data:** 2026-01-26
