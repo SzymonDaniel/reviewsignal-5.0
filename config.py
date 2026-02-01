@@ -11,6 +11,10 @@ Date: January 2026
 
 import os
 from typing import List, Dict
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # ═══════════════════════════════════════════════════════════════
 # DATABASE CONFIGURATION
@@ -38,7 +42,10 @@ CACHE_TTL = 86400  # 24 hours
 GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY', '')
 STRIPE_API_KEY = os.getenv('STRIPE_API_KEY', '')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', '')
-JWT_SECRET = os.getenv('JWT_SECRET', 'your-super-secret-jwt-key-min-32-chars')
+APOLLO_API_KEY = os.getenv('APOLLO_API_KEY', '')  # Lead generation (zamiast LinkedIn)
+JWT_SECRET = os.getenv('JWT_SECRET')
+if not JWT_SECRET or len(JWT_SECRET) < 32:
+    raise ValueError("JWT_SECRET must be set in environment and be at least 32 characters long")
 
 # ═══════════════════════════════════════════════════════════════
 # SCRAPING CONFIGURATION
