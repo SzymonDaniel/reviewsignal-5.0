@@ -1,0 +1,26 @@
+[Unit]
+Description=ReviewSignal Neural API - MiniLM Embeddings & Anomaly Detection
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
+
+[Service]
+Type=simple
+User=info_betsim
+Group=info_betsim
+WorkingDirectory=/home/info_betsim/reviewsignal-5.0
+Environment="PATH=/home/info_betsim/reviewsignal-5.0/venv/bin:/usr/local/bin:/usr/bin"
+Environment="PYTHONPATH=/home/info_betsim/reviewsignal-5.0"
+ExecStart=/home/info_betsim/reviewsignal-5.0/venv/bin/python -m uvicorn api.neural_api:app --host 0.0.0.0 --port 8005 --workers 1
+Restart=always
+RestartSec=10
+
+# Memory limit (Neural Core uses ~500MB with model loaded)
+MemoryMax=1G
+MemoryHigh=800M
+
+# Logging
+StandardOutput=append:/var/log/reviewsignal/neural-api.log
+StandardError=append:/var/log/reviewsignal/neural-api.log
+
+[Install]
+WantedBy=multi-user.target
