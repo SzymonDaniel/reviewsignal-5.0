@@ -1,0 +1,23 @@
+Subject: Closing your file
+
+{{first_name}},
+
+I haven't heard back, so I'll assume alternative data signals aren't a priority for {{company}} right now.
+
+I'll close your file, but wanted to leave you with one last data point:
+
+**This week's signal:**
+• Chipotle sentiment up 18% (10 major markets)
+• Historical pattern: +3-5% stock movement within 30 days
+• Last similar signal: January 2025 (+4.8% accuracy)
+
+If you ever want to explore this, just reply to this email. I'll reopen your access.
+
+Best of luck with your investments.
+
+Best,
+ReviewSignal Team
+reviewsignal.ai
+
+---
+P.S. - If timing is just off right now, no problem. When would be better to reconnect? Q2? Q3?

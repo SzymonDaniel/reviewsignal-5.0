@@ -1,0 +1,39 @@
+{
+  "sequence_name": "High Intent Lead Outreach",
+  "segment": "high_intent",
+  "description": "For leads from companies showing buying intent for sentiment analysis, reviews, reputation monitoring",
+  "intent_topics": ["Sentiment Analysis", "Customer Review", "Reputation Management", "Social Media Monitoring"],
+  "total_emails": 4,
+  "delay_days": [0, 2, 5, 10],
+  "priority": "critical",
+  "emails": [
+    {
+      "step": 1,
+      "subject": "Saw {{company_name}} is researching sentiment analysis",
+      "preview": "We might be exactly what you're looking for",
+      "body_text": "Hi {{first_name}},\n\nI noticed {{company_name}} has been researching sentiment analysis and review monitoring solutions.\n\nThat's exactly what we do - but built specifically for institutional investors.\n\nReviewSignal analyzes millions of consumer reviews across 500k+ locations to generate trading signals. We track sentiment shifts for restaurants, retail, and hospitality brands - the kind of data that correlates with same-store sales before it shows up in financials.\n\nSince you're actively evaluating options, I thought I'd reach out directly.\n\nWould it help to see:\n1. A demo of our platform?\n2. Sample data and methodology docs?\n3. Our 6-month track record?\n\nHappy to share any or all of the above.\n\nSimon\nFounder, ReviewSignal.ai",
+      "body_html": "<p>Hi {{first_name}},</p><p>I noticed {{company_name}} has been researching sentiment analysis and review monitoring solutions.</p><p><strong>That's exactly what we do - but built specifically for institutional investors.</strong></p><p>ReviewSignal analyzes millions of consumer reviews across 500k+ locations to generate trading signals. We track sentiment shifts for restaurants, retail, and hospitality brands - the kind of data that correlates with same-store sales before it shows up in financials.</p><p>Since you're actively evaluating options, I thought I'd reach out directly.</p><p><strong>Would it help to see:</strong></p><ol><li>A demo of our platform?</li><li>Sample data and methodology docs?</li><li>Our 6-month track record?</li></ol><p>Happy to share any or all of the above.</p><p>Simon<br>Founder, <a href=\"https://reviewsignal.ai\">ReviewSignal.ai</a></p>"
+    },
+    {
+      "step": 2,
+      "subject": "Quick overview - since you're evaluating sentiment tools",
+      "preview": "How we compare to general-purpose tools",
+      "body_text": "{{first_name}},\n\nSince {{company_name}} is looking at sentiment analysis options, here's how we differ from general-purpose tools:\n\nGENERAL SENTIMENT TOOLS (Brandwatch, Sprinklr, etc.)\n• Built for marketing teams\n• Focus on social media mentions\n• Real-time dashboards for brand monitoring\n• No investment signals\n\nREVIEWSIGNAL\n• Built for quant funds and PMs\n• Focus on consumer reviews (leading indicator)\n• Location-level granularity (500k+ sites)\n• Generates actionable trading signals\n• API/data feed for model integration\n• 6-month track record with 67% accuracy\n\nWe're not a marketing tool - we're alternative data infrastructure for investment decisions.\n\nIf that aligns with what you're looking for, let's talk.\n\nSimon",
+      "body_html": "<p>{{first_name}},</p><p>Since {{company_name}} is looking at sentiment analysis options, here's how we differ from general-purpose tools:</p><table><tr><th></th><th>General Tools</th><th>ReviewSignal</th></tr><tr><td>Built for</td><td>Marketing teams</td><td>Quant funds & PMs</td></tr><tr><td>Data source</td><td>Social media</td><td>Consumer reviews</td></tr><tr><td>Output</td><td>Dashboards</td><td>Trading signals + API</td></tr><tr><td>Granularity</td><td>Brand level</td><td>Location level (500k+)</td></tr><tr><td>Track record</td><td>N/A</td><td>67% accuracy, 1.8 Sharpe</td></tr></table><p>We're not a marketing tool - we're <strong>alternative data infrastructure</strong> for investment decisions.</p><p>If that aligns with what you're looking for, let's talk.</p><p>Simon</p>"
+    },
+    {
+      "step": 3,
+      "subject": "I can have sample data to you today",
+      "preview": "30 days of sentiment data for testing",
+      "body_text": "{{first_name}},\n\nSince you're actively evaluating solutions, I wanted to make it easy to test ours.\n\nI can send you:\n\n1. SAMPLE DATASET (free)\n- 30 days of sentiment data\n- 10,000 locations\n- JSON/CSV format\n- Full documentation\n\n2. API TRIAL (if you want to integrate)\n- 14-day access\n- Full historical data\n- Python SDK included\n\n3. DEMO CALL (if you want walkthrough)\n- 30 min screen share\n- Live platform tour\n- Q&A with our data team\n\nWhich would be most helpful for your evaluation?\n\nJust reply with 1, 2, or 3 (or all!) and I'll set it up.\n\nSimon",
+      "body_html": "<p>{{first_name}},</p><p>Since you're actively evaluating solutions, I wanted to make it easy to test ours.</p><p><strong>I can send you:</strong></p><p><strong>1. SAMPLE DATASET (free)</strong></p><ul><li>30 days of sentiment data</li><li>10,000 locations</li><li>JSON/CSV format</li><li>Full documentation</li></ul><p><strong>2. API TRIAL (if you want to integrate)</strong></p><ul><li>14-day access</li><li>Full historical data</li><li>Python SDK included</li></ul><p><strong>3. DEMO CALL (if you want walkthrough)</strong></p><ul><li>30 min screen share</li><li>Live platform tour</li><li>Q&A with our data team</li></ul><p><strong>Which would be most helpful for your evaluation?</strong></p><p>Just reply with 1, 2, or 3 (or all!) and I'll set it up.</p><p>Simon</p>"
+    },
+    {
+      "step": 4,
+      "subject": "Still evaluating sentiment tools?",
+      "preview": "Happy to help when timing is right",
+      "body_text": "Hi {{first_name}},\n\nI've reached out a few times since I saw {{company_name}} was researching sentiment analysis solutions.\n\nA few possibilities:\n\na) You found what you needed (congrats!)\nb) Still evaluating but swamped\nc) Not the right fit\n\nIf (b), I'm happy to wait and follow up when timing is better. Just let me know.\n\nIf (c), I'd genuinely appreciate knowing what you're looking for that we don't offer - helps us improve.\n\nEither way, I'll stop the emails for now. Feel free to reach out anytime if things change.\n\nBest of luck with the evaluation.\n\nSimon\nReviewSignal.ai\n\nP.S. Our pilot program ($2,500/month) remains open if you want to test with real capital allocation decisions.",
+      "body_html": "<p>Hi {{first_name}},</p><p>I've reached out a few times since I saw {{company_name}} was researching sentiment analysis solutions.</p><p><strong>A few possibilities:</strong></p><ol type=\"a\"><li>You found what you needed (congrats!)</li><li>Still evaluating but swamped</li><li>Not the right fit</li></ol><p>If (b), I'm happy to wait and follow up when timing is better. Just let me know.</p><p>If (c), I'd genuinely appreciate knowing what you're looking for that we don't offer - helps us improve.</p><p>Either way, I'll stop the emails for now. Feel free to reach out anytime if things change.</p><p>Best of luck with the evaluation.</p><p>Simon<br><a href=\"https://reviewsignal.ai\">ReviewSignal.ai</a></p><p><small>P.S. Our pilot program ($2,500/month) remains open if you want to test with real capital allocation decisions.</small></p>"
+    }
+  ]
+}

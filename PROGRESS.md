@@ -1,6 +1,379 @@
 # PROGRESS.md - Log postępu prac
 
-**Last Updated:** 2026-02-01 16:30 UTC
+**Last Updated:** 2026-02-05 22:15 UTC
+
+---
+
+## 2026-02-05 22:15 UTC - EMAIL ACCOUNTS ADDED TO ALL CAMPAIGNS
+
+### SESSION SUMMARY: 8 Email Accounts Added to 5 Campaigns
+
+**Status:** COMPLETE - Instantly campaigns ready to launch!
+
+---
+
+### WYKONANE:
+
+#### 1. Dodano 8 kont email do 5 kampanii Instantly
+
+**Skrypt:** `scripts/add_accounts_to_campaigns.py`
+
+**Konta email (8):**
+- simon@reviewsignal.cc (99% warmup)
+- simon@reviewsignal.net (100% warmup)
+- simon@reviewsignal.org (100% warmup)
+- simon@reviewsignal.review (99% warmup)
+- simon@reviewsignal.work (100% warmup)
+- simon@reviewsignal.xyz (100% warmup)
+- team@reviewsignal.ai (warmup starting)
+- betsim@betsim.io (100% warmup)
+
+**Kampanie (5):**
+- ✅ PM (Portfolio Manager) - 4e5a0e31-f0f0-4d5e-8ed9-ed5c89283eb3
+- ✅ Quant Analyst - 7ac4becc-f05c-425b-9483-ab41356e024c
+- ✅ Alt Data Head - 15def6db-dffe-4269-b844-b458919f38c3
+- ✅ CIO - 0075dfde-b47b-46d8-9537-ffca8b46b66d
+- ✅ High Intent - 9dfb46a4-ac6d-4c1d-960d-aa5d6f46a1fb
+
+**Metoda:** PATCH `/api/v2/campaigns/{id}` z `email_list`
+
+---
+
+### CO TRZEBA ZROBIĆ JUTRO (2026-02-06):
+
+#### PRIORYTET 1: Aktywacja kampanii
+1. **Zaloguj się do Instantly:** https://app.instantly.ai
+2. **Sprawdź każdą kampanię:**
+   - Zweryfikuj że 8 kont jest przypisanych
+   - Sprawdź email sequence/templates
+   - Ustaw limity wysyłki (np. 50/dzień na konto)
+3. **Dodaj leady do kampanii:**
+   - 633 leadów w bazie PostgreSQL
+   - Sync do odpowiednich kampanii wg segmentu
+4. **AKTYWUJ KAMPANIE** (kliknij "Launch")
+
+#### PRIORYTET 2: Monitoring
+1. **Sprawdź Apollo cron o 09:00 i 21:00 UTC**
+   - Auto-paginacja powinna pobrać stronę 13
+   - Oczekuj ~55-60 nowych leadów na run
+2. **Sprawdź warmup status team@reviewsignal.ai**
+   - Nowe konto, warmup dopiero startuje
+3. **Monitoruj pierwsze wysyłki:**
+   - Sprawdź delivery rate
+   - Sprawdź bounce rate
+   - Sprawdź reply rate
+
+#### PRIORYTET 3: Lead sync
+1. **Przypisz leady do kampanii wg segmentu:**
+   - PM titles → Campaign PM
+   - Quant titles → Campaign Quant
+   - Alt Data titles → Campaign Alt Data
+   - CIO titles → Campaign CIO
+   - High intent → Campaign Intent
+2. **Stwórz skrypt do auto-sync leadów**
+
+---
+
+### PLIKI ZMODYFIKOWANE:
+1. `scripts/add_accounts_to_campaigns.py` - NEW
+2. `PROGRESS.md` - this entry
+
+---
+
+### STATUS SYSTEMU (2026-02-05 22:15 UTC):
+
+```
+INSTANTLY:
+├── Email Accounts: 8/8 connected
+├── Campaigns: 5/5 configured
+├── Accounts per campaign: 8
+├── Average warmup: 99.6%
+└── Status: READY TO LAUNCH!
+
+APOLLO:
+├── Leads: 633
+├── Next page: 13
+├── Cron: 09:00 + 21:00 UTC
+└── Auto-pagination: WORKING
+
+DATABASE:
+├── Lokalizacje: 42,201
+├── Recenzje: 46,113
+└── Leady: 633
+```
+
+---
+
+## 2026-02-05 19:50 UTC - MEGA APOLLO SESSION + AUTO-PAGINATION FIX
+
+### SESSION SUMMARY: 633 Hedge Fund Leads + Automation Fixed
+
+**Status:** COMPLETE - Apollo fully automated with pagination
+
+---
+
+### GLOWNE OSIAGNIECIA:
+
+#### 1. Apollo Bug Fix - title=None
+**File:** `scripts/apollo_bulk_search.py`
+
+**Problem:** Skrypt crashowal gdy Apollo zwracal lead bez `title`
+```python
+AttributeError: 'NoneType' object has no attribute 'lower'
+```
+
+**Fix:** Dodano null check w `_generate_angle()`:
+```python
+if not title:
+    return f"Alternative data platform for institutional investors..."
+```
+
+#### 2. Apollo Auto-Pagination - NAPRAWIONE!
+**File:** `scripts/apollo_cron_wrapper.sh`
+
+**Problem PRZED:** Cron zawsze pobieral page 1 (te same leady!)
+
+**Rozwiazanie:** Nowy wrapper z auto-paginacja:
+- Stworzono `.apollo_current_page` file do trackowania strony
+- Automatyczne zwiekszanie strony po kazdym urun
+- Reset do page 1 po 50 stronach (cykl)
+- Obsluga bledow (nie zwieksza strony przy crash)
+
+**Lokalizacja pliku strony:** `scripts/.apollo_current_page`
+**Aktualna strona:** 13
+
+#### 3. Massive Lead Import - 540 NOWYCH LEADOW!
+
+**Pobrane strony:** 1-12 (63 leads/page)
+**Wynik:** 633 total leads (z 93 przed sesja)
+
+**Top Hedge Funds w bazie:**
+| Firma | Leady | AUM |
+|-------|-------|-----|
+| Millennium | 115 | $60B |
+| Balyasny | 109 | $16B |
+| Point72 | 51 | $27B |
+| Marshall Wace | 23 | $65B |
+| ExodusPoint | 20 | $12B |
+| Schonfeld | 18 | $14B |
+| Brevan Howard | 16 | $35B |
+| Centiva Capital | 16 | $5B |
+| Dymon Asia | 12 | $6B |
+| Jain Global | 10 | $7B |
+| Winton | 9 | $7B |
+| Tudor Group | 8 | $12B |
+| Two Sigma | 6 | $60B |
+| Elliott | 5 | $55B |
+| Citadel | 2 | $62B |
+
+**Laczne AUM firm w bazie:** >$500B
+
+#### 4. System Status Verified
+
+**Serwisy (7/7 UP):**
+- production-scraper: Running 2d
+- lead-receiver: Running 4d
+- echo-engine: Running 3d
+- singularity-engine: Running 3d
+- higgs-nexus: Running 3d
+- neural-api: Running 21h
+- reviewsignal-api: Running 21h
+
+**Database stats:**
+- Lokalizacje: 42,201 (+5,271)
+- Recenzje: 46,113 (+568)
+- Leady: 633 (+540 = 7x wzrost!)
+
+---
+
+### PLIKI ZMODYFIKOWANE:
+
+1. `scripts/apollo_bulk_search.py` - null title fix
+2. `scripts/apollo_cron_wrapper.sh` - auto-pagination
+3. `scripts/.apollo_current_page` - page tracker (NEW)
+4. `CURRENT_SYSTEM_STATUS.md` - updated
+5. `PROGRESS.md` - this entry
+6. `CLAUDE.md` - to be updated
+
+---
+
+### AUTOMATYZACJA TERAZ:
+
+```
+Cron Jobs:
+- 09:00 UTC: Apollo page N (~55 leads)
+- 21:00 UTC: Apollo page N+1 (~55 leads)
+
+Prognoza:
+- Dziennie: ~110 leads
+- Tygodniowo: ~770 leads
+- Miesiecznie: ~3,300 leads
+```
+
+---
+
+### NASTEPNE KROKI:
+
+1. [ ] Aktywowac kampanie Instantly (7/8 emaili ready @ 99.6%)
+2. [ ] Stworzyc email sequences dla hedge funds
+3. [ ] Monitor Apollo automation (21:00 UTC run)
+
+---
+
+## 2026-02-04 21:05 UTC - GDPR COMPLIANCE MODULE COMPLETE
+
+### 🎯 SESSION SUMMARY: Full GDPR Module Implementation (Art. 15, 17, 20, 30)
+
+**Status:** ✅ COMPLETE - GDPR module fully operational with API, cron jobs, and audit logging
+
+---
+
+### ✅ GŁÓWNE OSIĄGNIĘCIA:
+
+#### 1. Database Migration - 4 New Tables ✅
+**File:** `migrations/001_gdpr_tables.sql`
+
+**Created tables:**
+- `gdpr_consents` - Consent management (marketing, data_processing, analytics, third_party_sharing)
+- `gdpr_requests` - GDPR requests (data_export, data_erasure, data_access, data_rectification, etc.)
+- `gdpr_audit_log` - Full audit trail for compliance (Art. 30)
+- `data_retention_policies` - Automated data retention rules
+
+**Features:**
+- PostgreSQL ENUM types for type safety
+- Automatic `updated_at` triggers
+- Views: `gdpr_active_consents`, `gdpr_pending_requests`, `gdpr_compliance_summary`
+- Default retention policies (leads: 730 days, outreach_log: 365 days, user_sessions: 90 days, audit_log: 7 years)
+
+#### 2. Python Module - compliance/gdpr/ ✅
+**Location:** `/home/info_betsim/reviewsignal-5.0/compliance/gdpr/`
+
+**Files created (8 total):**
+| File | Lines | Description |
+|------|-------|-------------|
+| `__init__.py` | ~50 | Module exports |
+| `models.py` | ~300 | SQLAlchemy models with lowercase enums |
+| `gdpr_service.py` | ~625 | Main orchestration service |
+| `data_exporter.py` | ~360 | JSON/CSV export (Art. 20) |
+| `data_eraser.py` | ~400 | Data deletion/anonymization (Art. 17) |
+| `consent_manager.py` | ~300 | Consent lifecycle management |
+| `retention_manager.py` | ~350 | Automated data cleanup |
+| `gdpr_audit.py` | ~250 | Dedicated audit logger |
+
+**Key fixes during implementation:**
+- Enum case sensitivity: Changed all enums to lowercase (PostgreSQL CHECK constraints)
+- Timezone handling: Fixed naive vs aware datetime comparisons
+- Column names: Fixed `lead_id` → `id`, `review_time` → `time_posted`
+- Session management: Added rollback handling for failed transactions
+
+#### 3. REST API - 14 Endpoints ✅
+**File:** `api/gdpr_api.py`
+**Port:** 8000 (integrated with main API)
+**Prefix:** `/api/v1/gdpr`
+
+**Endpoints tested:**
+| Endpoint | Method | Status |
+|----------|--------|--------|
+| `/health` | GET | ✅ Working |
+| `/consent` | POST | ✅ Grant consent |
+| `/consent` | DELETE | ✅ Withdraw consent |
+| `/consent/status` | GET | ✅ All consents for email |
+| `/consent/check` | GET | ✅ Check specific consent |
+| `/request` | POST | ✅ Create GDPR request |
+| `/request/{id}` | GET | ✅ Get request status |
+| `/request/{id}/process` | POST | ✅ Process request |
+| `/export` | POST | ✅ Export data (JSON/CSV) |
+| `/erase` | POST | ✅ Erase data (dry_run supported) |
+| `/requests/pending` | GET | ✅ List pending requests |
+| `/requests/overdue` | GET | ✅ List overdue requests |
+| `/retention/policies` | GET | ✅ Get retention policies |
+| `/compliance/summary` | GET | ✅ Compliance statistics |
+| `/export/download/{file}` | GET | ✅ Download export file |
+
+#### 4. Cron Jobs - Automated Compliance ✅
+**Configured in crontab:**
+
+```bash
+# GDPR Compliance Cron Jobs (Daily at 2:00 AM and 9:00 AM UTC)
+0 2 * * * /usr/bin/python3 /home/info_betsim/reviewsignal-5.0/scripts/gdpr_retention_cleanup.py
+0 9 * * * /usr/bin/python3 /home/info_betsim/reviewsignal-5.0/scripts/gdpr_check_overdue.py
+```
+
+**Scripts:**
+- `scripts/gdpr_retention_cleanup.py` - Daily cleanup based on retention policies
+- `scripts/gdpr_check_overdue.py` - Alert for overdue GDPR requests (30-day deadline)
+
+**Log files:**
+- `/var/log/reviewsignal/gdpr_retention.log`
+- `/var/log/reviewsignal/gdpr_overdue.log`
+
+#### 5. Export Files ✅
+**Location:** `/home/info_betsim/reviewsignal-5.0/exports/`
+
+**Supported formats:**
+- JSON (structured, machine-readable)
+- CSV (human-readable, spreadsheet compatible)
+
+**Export includes data from:**
+- users, leads, reviews, locations, outreach_log, gdpr_consents, gdpr_requests
+
+---
+
+### 📊 METRYKI:
+
+**Database records:**
+- `gdpr_consents`: 4 records (3 active)
+- `gdpr_requests`: 3 records (1 completed, 2 pending)
+- `gdpr_audit_log`: 13 events
+- `data_retention_policies`: 4 policies configured
+
+**API Health Check:**
+```json
+{
+  "status": "healthy",
+  "pending_requests": 2,
+  "overdue_requests": 0,
+  "components": {
+    "consent_manager": "ok",
+    "data_exporter": "ok",
+    "data_eraser": "ok",
+    "retention_manager": "ok"
+  }
+}
+```
+
+**Files created/modified:**
+- New files: 12
+- Modified files: 2 (`api/main.py`, `compliance/__init__.py`)
+- Total new LOC: ~3,500
+
+---
+
+### 🔧 TECHNICAL DETAILS:
+
+**GDPR Articles Implemented:**
+- **Art. 7** - Consent management (grant, withdraw, check)
+- **Art. 15** - Right of access (data export)
+- **Art. 17** - Right to erasure (data deletion/anonymization)
+- **Art. 20** - Data portability (JSON/CSV export)
+- **Art. 30** - Records of processing activities (audit log)
+
+**Retention Policies:**
+| Table | Retention | Action | Condition |
+|-------|-----------|--------|-----------|
+| leads | 730 days | delete | status='lost' |
+| outreach_log | 365 days | delete | - |
+| user_sessions | 90 days | delete | - |
+| gdpr_audit_log | 2555 days (7 years) | archive | legal requirement |
+
+---
+
+### 📝 NEXT STEPS:
+1. Configure email notifications for overdue requests
+2. Add webhook support for GDPR events
+3. Implement data rectification endpoint (Art. 16)
+4. Add processing restriction support (Art. 18)
+5. Create admin dashboard for GDPR management
 
 ---
 
@@ -3319,4 +3692,234 @@ scripts/weekly_neural_refit.py - Added Task 5: API reload notification
 **Status:** ✅ COMPLETE - WEEKLY REFIT CRON JOB CONFIGURED
 **Duration:** ~15 minutes (implementation + testing)
 **Next refit:** Sunday 2026-02-09 00:00 UTC
+
+
+---
+
+## [2026-02-03] 23:15 UTC - GIT PUSH COMPLETE + SSH CONFIGURED 🔐
+
+### 📋 Summary
+Successfully pushed Neural Core 5.1.0 to GitHub after configuring SSH authentication.
+
+### ✅ What Was Done
+
+**1. SSH Key Generated**
+- Type: ed25519
+- Name: `reviewsignal-prod`
+- Location: `~/.ssh/id_ed25519`
+
+**2. GitHub SSH Configured**
+- Key added to GitHub account
+- Remote changed: HTTPS → SSH
+- `git@github.com:SzymonDaniel/reviewsignal-5.0.git`
+
+**3. Push Completed**
+```
+2b08574 🧠 Neural Core 5.1.0 - MiniLM Embeddings & Anomaly Detection
+768ac24 feat: Add compliance module for pitch meetings
+```
+
+**Files pushed (10):**
+- modules/neural_core.py (+1,285 lines)
+- api/neural_api.py (+461 lines)
+- modules/echo_neural_bridge.py (+498 lines)
+- modules/neural_integration.py (+510 lines)
+- scripts/weekly_neural_refit.py (+246 lines)
+- scripts/test_neural_with_real_data.py (+301 lines)
+- systemd/neural-api.service (+26 lines)
+- requirements.txt (updated)
+- CLAUDE.md (updated)
+- PROGRESS.md (updated)
+
+**Total:** +4,180 lines of code
+
+---
+
+**Status:** ✅ COMPLETE - NEURAL CORE PUSHED TO GITHUB
+**Repo:** https://github.com/SzymonDaniel/reviewsignal-5.0
+
+
+## 2026-02-05 20:26 UTC - APOLLO INTENT SEARCH v2.0 DEPLOYED
+
+### Co zostało zrobione:
+1. **Stworzono `apollo_intent_search.py`** (~600 LOC) - profesjonalny skrypt z:
+   - Intent Data integration (intent_strength filtering)
+   - Smart scoring z intent boost (30% waga)
+   - Organization-level intent caching
+   - Dual-mode operation (intent-only vs standard)
+   - Comprehensive analytics i reporting
+   - Personalized angles dla high-intent leads
+
+2. **Zaktualizowano `apollo_cron_wrapper.sh`** v2.0:
+   - Auto-detection intent availability (24h po konfiguracji)
+   - Automatyczny wybór skryptu (intent vs standard)
+   - Ulepszone logowanie
+
+3. **Skonfigurowano Intent Topics w Apollo:**
+   - Customer Review
+   - Social Media Monitoring Software
+   - Reputation Management Services Providers
+   - Online Reputation Management Software
+   - Sentiment Analysis
+   - Product Reviews Software
+
+### Timeline:
+- 2026-02-05: Intent Topics skonfigurowane
+- 2026-02-06: Intent data dostępne (24h)
+- Cron automatycznie przełączy się na intent search
+
+### Test Results:
+- Skrypt działa poprawnie
+- Brak błędów (naprawiono 422 errors)
+- Statystyki intent działają
+- Gotowy do produkcji
+
+### Następne kroki:
+- Poczekać 24h na dane intent
+- Monitor o 09:00 UTC 2026-02-06 (pierwszy run z intent)
+- Aktywować Instantly campaign z high-intent leads
+
+
+## 2026-02-05 20:45 UTC - EMAIL TEMPLATES + LEAD SEGMENTATION COMPLETE
+
+### Co zostało zrobione:
+
+**1. Track Record System**
+- Stworzono `demo_data_generator.py` - generuje realistyczne demo sygnały
+- 72 sygnałów, 67% win rate, Sharpe 1.8
+- Output: `track_record/demo_signals.json`
+
+**2. Email Templates (5 sekwencji)**
+- `portfolio_manager_sequence.json` - 4 emails dla PM
+- `quant_analyst_sequence.json` - 4 emails dla quant (technical focus)
+- `head_alt_data_sequence.json` - 4 emails dla alt data buyers
+- `cio_sequence.json` - 3 emails dla C-level
+- `high_intent_sequence.json` - 4 emails dla HOT LEADS (intent-based)
+
+**3. Export to Instantly**
+- Stworzono `scripts/export_to_instantly.py`
+- Eksportuje do JSON i CSV format
+- Output: `exports/instantly/`
+
+**4. Lead Receiver API v2.0**
+- Automatyczna segmentacja po tytule i intent
+- Routing do odpowiedniej kampanii Instantly
+- Nowe endpointy: `/api/segment-test`, `/api/campaigns`
+- Intent leads mają priorytet
+
+**5. Segmentacja leadów:**
+| Tytuł | Segment |
+|-------|---------|
+| Portfolio Manager | portfolio_manager |
+| Quantitative Analyst | quant_analyst |
+| Head of Alt Data | head_alt_data |
+| CIO / MD | cio |
+| ANY (high intent) | high_intent |
+
+### Następne kroki:
+1. Stworzyć kampanie w Instantly dla każdego segmentu
+2. Skonfigurować ENV variables dla campaign IDs
+3. Aktywować kampanie (emaile są gotowe!)
+
+
+## 2026-02-06 21:15 UTC - INSTANTLY CAMPAIGN SETUP COMPLETE ✅
+
+### Co zostało zrobione:
+
+**1. Lead Segmentation**
+- Dodano kolumnę `segment` do tabeli `leads`
+- Stworzono `scripts/segment_leads.py` (~200 LOC)
+- Zsegmentowano 721 leadów:
+  - High Intent: 569 (78.9%) - Avg Score: 80.7 🔥
+  - Quant Analyst: 104 (14.4%)
+  - Portfolio Manager: 32 (4.4%)
+  - CIO: 3 (0.4%)
+  - Head Alt Data: 1 (0.1%)
+  - Unclassified: 12 (1.7%)
+
+**2. CSV Export dla Instantly**
+- Stworzono `scripts/export_leads_to_csv.py` (~180 LOC)
+- Wygenerowano 5 CSV files z leadami:
+  - `high_intent_leads.csv` (569 leads, 182 KB)
+  - `quant_analyst_leads.csv` (104 leads, 35 KB)
+  - `portfolio_manager_leads.csv` (32 leads, 8 KB)
+  - `cio_leads.csv` (3 leads, 830 bytes)
+  - `head_alt_data_leads.csv` (1 lead, 263 bytes)
+
+**3. Dokumentacja**
+- Stworzono `INSTANTLY_ACTIVATION_GUIDE.md` (kompletny przewodnik)
+- Stworzono `INSTANTLY_QUICK_START.md` (5-minutowy quick start)
+- Zawiera szczegółowe instrukcje dla wszystkich 5 kampanii
+
+**4. Email Sequences (już były)**
+- ✅ 5 sekwencji gotowych w `email_templates/sequences/`
+- ✅ Portfolio Manager (4 emails)
+- ✅ Quant Analyst (4 emails)
+- ✅ Head Alt Data (4 emails)
+- ✅ CIO (3 emails)
+- ✅ High Intent (4 emails)
+
+**5. Campaign IDs (już były)**
+- ✅ Wszystkie 5 campaign IDs w .env
+- ✅ Instantly API key skonfigurowany
+- ✅ 7 email accounts @ 99.6% warmup
+
+### Status po sesji:
+
+```
+INSTANTLY CAMPAIGNS - READY TO LAUNCH! 🚀
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ Leady:           709 zsegmentowane
+✅ Email accounts:  7 @ 99.6% warmup
+✅ Sequences:       5 kampanii (4 emails każda)
+✅ CSV exports:     5 plików gotowych do upload
+✅ Campaign IDs:    5 skonfigurowanych
+✅ Documentation:   Kompletna
+
+NASTĘPNY KROK:
+→ Upload CSV do Instantly campaigns (5 min)
+→ Add email accounts do kampanii (2 min)
+→ Configure schedule Mon-Fri 9-18 (1 min)
+→ LAUNCH! 🚀
+```
+
+### Pliki stworzone/zmodyfikowane:
+```
+scripts/segment_leads.py                    - NEW (~200 LOC)
+scripts/export_leads_to_csv.py              - NEW (~180 LOC)
+INSTANTLY_ACTIVATION_GUIDE.md               - NEW (kompletny przewodnik)
+INSTANTLY_QUICK_START.md                    - NEW (quick start)
+exports/instantly/leads/*.csv               - NEW (5 plików)
+PROGRESS.md                                 - UPDATED
+```
+
+### Database changes:
+```sql
+ALTER TABLE leads ADD COLUMN segment VARCHAR(50);
+CREATE INDEX idx_leads_segment ON leads(segment);
+UPDATE leads SET segment = ... WHERE ... (721 rows updated)
+```
+
+### Następne kroki (TODO):
+1. [ ] User: Upload CSV do Instantly (5 min)
+2. [ ] User: Add email accounts (2 min)
+3. [ ] User: Configure schedule (1 min)
+4. [ ] User: Launch campaigns! 🚀
+5. [ ] Monitor open/reply rates
+6. [ ] A/B test subject lines
+7. [ ] Auto-sync nowych leadów z Apollo
+
+### Projekcje:
+- Wysyłka: ~3,000 emails/miesiąc
+- Open rate: 40-50% (target)
+- Reply rate: 3-5% (target)
+- Meetings: 5-15/miesiąc
+- Pilot customers: 1-3/miesiąc
+
+---
+
+**Status:** ✅ COMPLETE - INSTANTLY READY TO LAUNCH
+**Duration:** ~1.5 godziny (segmentation + export + docs)
+**Impact:** KRYTYCZNE - Pipeline lead generation gotowy!
 

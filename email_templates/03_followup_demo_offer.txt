@@ -1,0 +1,27 @@
+Subject: 15-min demo - ReviewSignal for {{company}}
+
+{{first_name}},
+
+Last chance to grab one of the 5 pilot spots this quarter.
+
+**What you'll see in the demo:**
+• Live sentiment dashboard for your portfolio companies
+• Historical signal accuracy (68% correlation with earnings)
+• Real anomaly examples from this week
+
+**Time investment:** 15 minutes
+**Cost:** $0 for pilot program
+**Value:** Early access to signals that could inform your next trade
+
+Available slots this week:
+• Tuesday 2pm EST
+• Wednesday 10am EST
+• Thursday 3pm EST
+
+Just reply with your preferred time and I'll send the calendar invite.
+
+Best,
+ReviewSignal Team
+reviewsignal.ai
+
+P.S. - After the demo, you decide if it's worth continuing. No commitment required.

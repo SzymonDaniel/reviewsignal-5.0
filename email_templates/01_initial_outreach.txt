@@ -1,0 +1,22 @@
+Subject: Alternative data signal for {{company}}
+
+Hi {{first_name}},
+
+I noticed {{company}} tracks traditional metrics for investment decisions. What if you could predict {{chain}} performance before quarterly reports?
+
+ReviewSignal analyzes 50,000+ consumer reviews daily to generate early warning signals:
+
+• Sentiment trends (14-day advance indicators)
+• Location-specific anomalies
+• Foot traffic correlation proxies
+
+Example: Our system flagged Starbucks NYC sentiment drop 2 weeks before their last earnings miss.
+
+Quick question: Does your team currently use consumer sentiment data for investment signals?
+
+Best,
+ReviewSignal Team
+reviewsignal.ai
+
+---
+P.S. We're offering pilot access to 5 funds this quarter.

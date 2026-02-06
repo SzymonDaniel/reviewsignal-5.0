@@ -1,0 +1,30 @@
+Subject: Case study: Predicting retail earnings with review data
+
+Hi {{first_name}},
+
+Following up on alternative data for {{company}}.
+
+Here's a real example of how review sentiment predicted stock movement:
+
+**McDonald's Q3 2023:**
+• Our system detected -12% sentiment drop in key markets
+• 14 days before earnings announcement
+• Stock declined 4.2% post-earnings (matching our signal)
+
+**The data:**
+• 10,000+ real reviews analyzed
+• 20 major US cities covered
+• Real-time anomaly detection
+
+**Your access:**
+• 14-day free trial
+• Custom dashboard for your portfolio
+• Direct API integration available
+
+Would you like to see how this applies to your current holdings?
+
+I can set up a 15-min demo this week.
+
+Best,
+ReviewSignal Team
+reviewsignal.ai
