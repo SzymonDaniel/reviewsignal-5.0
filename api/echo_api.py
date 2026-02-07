@@ -33,7 +33,6 @@ from modules.echo_engine import (
     MonteCarloResult,
     TradingSignal,
 )
-from modules.database_schema import DatabaseManager
 from config import DATABASE_URL
 
 # Import custom metrics
@@ -134,9 +133,6 @@ if COMPLIANCE_ENABLED:
 
     app.add_middleware(AuditLoggingMiddleware)
 
-# Database Manager
-db_manager = None
-
 # Cached Echo Engine (rebuilt periodically)
 _echo_engine: Optional[EchoEngine] = None
 _engine_built_at: Optional[datetime] = None
@@ -192,14 +188,6 @@ class APIResponse(BaseModel):
 # ═══════════════════════════════════════════════════════════════════
 # HELPER FUNCTIONS
 # ═══════════════════════════════════════════════════════════════════
-
-def get_db_manager() -> DatabaseManager:
-    """Get or create database manager."""
-    global db_manager
-    if db_manager is None:
-        db_manager = DatabaseManager(DATABASE_URL)
-    return db_manager
-
 
 def get_echo_engine(
     chain_filter: Optional[str] = None,

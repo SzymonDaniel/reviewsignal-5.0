@@ -7,7 +7,8 @@ import asyncio
 from datetime import datetime
 
 import sys
-sys.path.insert(0, '/home/info_betsim/reviewsignal-5.0')
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 
 from modules.higgs_nexus.core import (
     HiggsNexus,

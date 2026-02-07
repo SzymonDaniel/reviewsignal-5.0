@@ -31,16 +31,8 @@ try:
     )
     METRICS_ENABLED = True
 except ImportError:
-    try:
-        from metrics_helper import (
-            metrics_endpoint,
-            track_lead_collected, track_lead_processed, track_lead_failed,
-            track_instantly_sync, set_database_connections, track_database_query
-        )
-        METRICS_ENABLED = True
-    except ImportError:
-        METRICS_ENABLED = False
-        logger.warning("metrics_helper_not_available")
+    METRICS_ENABLED = False
+    logger.warning("metrics_helper_not_available")
 
 # Instantly config (optional)
 INSTANTLY_API_KEY = os.getenv("INSTANTLY_API_KEY", "")

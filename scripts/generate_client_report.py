@@ -14,7 +14,7 @@ import argparse
 from datetime import datetime, timedelta
 from pathlib import Path
 
-sys.path.insert(0, '/home/info_betsim/reviewsignal-5.0')
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import structlog
 from sqlalchemy import create_engine, text

@@ -451,18 +451,19 @@ PRICING_TIERS: Dict[str, Dict] = {
 }
 
 # ═══════════════════════════════════════════════════════════════
-# STATISTICS
+# STATISTICS (only printed when run directly, not on import)
 # ═══════════════════════════════════════════════════════════════
 
-print(f"""
+if __name__ == "__main__":
+    print(f"""
 ═══════════════════════════════════════════════════════════════
-🚀 REVIEWSIGNAL CONFIGURATION LOADED
+  REVIEWSIGNAL CONFIGURATION LOADED
 ═══════════════════════════════════════════════════════════════
    Chains:              {len(CHAINS)}
    Cities:              {len(ALL_CITIES)}
    Max locations/city:  {MAX_LOCATIONS_PER_CITY}
    Potential coverage:  {len(CHAINS) * len(ALL_CITIES) * MAX_LOCATIONS_PER_CITY:,} locations
-   
+
    Tier 1 Targets:      {len(TIER_1_COMPANIES)} companies
    Tier 2 Targets:      {len(TIER_2_COMPANIES)} companies
 ═══════════════════════════════════════════════════════════════

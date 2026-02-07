@@ -11,11 +11,12 @@ Usage:
 """
 
 import sys
+import os
 import argparse
 import structlog
 from datetime import datetime
 
-sys.path.insert(0, '/home/info_betsim/reviewsignal-5.0')
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

@@ -23,7 +23,8 @@ from enum import Enum
 import asyncio
 
 import sys
-sys.path.insert(0, '/home/info_betsim/reviewsignal-5.0')
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from modules.database_schema import Base
 
