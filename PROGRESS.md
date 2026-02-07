@@ -4124,3 +4124,40 @@ cddccc2 feat: Complete ReviewSignal 5.0 system - all modules, tests, infra
 **Status:** ✅ SESJA ZAKONCZONA
 **Impact:** System zaudytowany, naprawiony, zweryfikowany i uporzadkowany
 
+---
+
+## 2026-02-07 09:20-09:35 UTC - AGENT AI NAPRAWIONY + COVERAGE SCRAPER
+
+### Agent AI - naprawiony po 9 dniach martwoty:
+- [x] **Root cause #1:** PRICING dict KeyError - model IDs zaktualizowane ale PRICING nie
+  - Fix: zaktualizowano PRICING dict (claude-sonnet-4-5, claude-haiku-4-5)
+  - Fix: _calculate_cost uzywa default pricing dla nieznanych modeli
+- [x] **Root cause #2:** sudo -u postgres nie dziala z systemd (brak sudoers)
+  - Fix: zmieniono na psycopg2 z DATABASE_URL
+- [x] **Root cause #3:** brain_log table owned by postgres, agent laczy sie jako reviewsignal
+  - Fix: GRANT ALL ON brain_log TO reviewsignal
+- [x] **Root cause #4:** brain_log schema inna niz uzyta (actions/state/confidence, nie action/result)
+  - Fix: poprawiony INSERT do wlasciwych kolumn
+- [x] Nowe praktyczne taski: Review Coverage, Data Quality, Scraper Health, Lead Pipeline, Daily Report
+- [x] **WYNIK:** Agent loguje do brain_log z prawdziwymi metrykami DB i serwisow
+
+### brain_log - PIERWSZE WPISY W HISTORII:
+```
+id=2: Review Coverage Monitor - 11,877 locations with reviews (26.7%)
+id=3: Scraper Health Check - all services healthy
+id=4: Lead Pipeline Monitor - 742 leads, 41 last 24h
+```
+
+### Coverage Scraper uruchomiony:
+- [x] Nowy skrypt scripts/coverage_scraper.py (200 loc/run)
+- [x] Production scraper z faza backfill (50 loc/cykl)
+- [x] Reviews rosna: 62,440 -> 63,602 (+1,162 w ciagu sesji)
+- [x] Coverage: 26.7% (rośnie)
+
+### Git:
+- 9603e25 fix: Revive autonomous agent + add coverage scraper
+
+**Status:** ✅ COMPLETE - Agent AI ZYWY, coverage scraper aktywny
+**Duration:** ~15 minut
+**Impact:** Agent monitoruje system w czasie rzeczywistym, dane rosna automatycznie
+
