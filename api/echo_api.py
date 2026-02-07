@@ -81,13 +81,22 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS
+# CORS - Production-ready configuration
+ALLOWED_ORIGINS = [
+    "https://reviewsignal.ai",
+    "https://www.reviewsignal.ai",
+    "https://app.reviewsignal.ai",
+    "https://dashboard.reviewsignal.ai",
+    "http://localhost:3000",  # Development
+    "http://localhost:8000",  # Local API testing
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-API-Key", "X-Request-ID"],
 )
 
 # Audit Logging Middleware

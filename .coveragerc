@@ -1,0 +1,98 @@
+# ReviewSignal 5.0 - Coverage Configuration
+
+[run]
+# Source packages to measure
+source = modules,api,agent
+
+# Omit files from coverage
+omit =
+    # Test files themselves
+    tests/*
+    */tests/*
+    # Virtual environments
+    */venv/*
+    */.venv/*
+    # Site packages
+    */site-packages/*
+    # Init files (usually just imports)
+    */__init__.py
+    # Configuration files
+    */config.py
+    # Scripts (tested separately)
+    scripts/*
+    # Frontend
+    frontend/*
+    # Monitoring
+    monitoring/*
+
+# Enable branch coverage
+branch = True
+
+# Parallel mode for multiprocessing
+parallel = True
+
+[report]
+# Target coverage percentage
+fail_under = 60
+
+# Precision for coverage percentages
+precision = 2
+
+# Show missing lines
+show_missing = True
+
+# Skip covered files in output
+skip_covered = False
+
+# Skip empty files
+skip_empty = True
+
+# Sort by coverage percentage (lowest first)
+sort = Cover
+
+# Exclude lines from coverage
+exclude_lines =
+    # Standard pragma
+    pragma: no cover
+
+    # Don't complain about missing debug code
+    def __repr__
+    def __str__
+
+    # Don't complain if tests don't hit defensive assertion code
+    raise AssertionError
+    raise NotImplementedError
+
+    # Don't complain if non-runnable code isn't run
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    if typing.TYPE_CHECKING:
+
+    # Don't complain about abstract methods
+    @abstractmethod
+    @abc.abstractmethod
+
+    # Don't complain about pass statements
+    pass
+
+    # Don't complain about ellipsis
+    \.\.\.
+
+[html]
+# HTML output directory
+directory = htmlcov
+
+# HTML report title
+title = ReviewSignal 5.0 - Test Coverage Report
+
+[xml]
+# XML output file
+output = coverage.xml
+
+[json]
+# JSON output file
+output = coverage.json
+# Pretty print JSON
+pretty_print = true
+# Show contexts
+show_contexts = true

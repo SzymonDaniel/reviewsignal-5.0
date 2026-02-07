@@ -1,0 +1,116 @@
+╔══════════════════════════════════════════════════════════╗
+║  🚀 APOLLO WORKFLOW - QUICK START (2 MINUTES)           ║
+╚══════════════════════════════════════════════════════════╝
+
+📅 Date: 2026-01-30
+🎯 Goal: Collect 500-1,000 leads by Feb 14
+⏱️  Time needed: 2 minutes setup, then automatic
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ STEP 1: OPEN N8N (30 seconds)                         ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+1. Open browser
+2. Go to: http://35.246.214.156:5678
+3. Login if prompted
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ STEP 2: ACTIVATE WORKFLOW (1 minute)                  ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+1. Click "Workflows" in left sidebar
+2. Find: "FLOW 7 - Apollo to PostgreSQL"
+3. Click the workflow name to open it
+4. Toggle the switch to "Active" ✅
+5. Done!
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ STEP 3: VERIFY IT'S WORKING (30 seconds)              ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+In terminal, run:
+
+    cd /home/info_betsim/reviewsignal-5.0
+    ./check_apollo_status.sh
+
+This will show:
+✅ PostgreSQL status
+✅ Total leads collected
+✅ Recent activity
+✅ Progress to target
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ WHAT HAPPENS NEXT (AUTOMATIC)                         ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+📊 Apollo will run every 2 hours automatically
+📊 Collect 30-50 leads per day
+📊 Store in PostgreSQL database
+📊 No action needed from you!
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ DAILY CHECK (OPTIONAL)                                ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+Run once per day to monitor:
+
+    ./check_apollo_status.sh
+
+Or add to cron for daily email:
+
+    0 9 * * * cd /home/info_betsim/reviewsignal-5.0 && ./check_apollo_status.sh | mail -s "Apollo Status" your@email.com
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ EXPECTED TIMELINE                                     ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+Today (Jan 30):  Activate ✅
+Feb 6:           ~250 leads
+Feb 13:          ~500 leads ✅ READY
+Feb 14:          🚀 LAUNCH CAMPAIGN
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ TROUBLESHOOTING                                       ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+❌ Can't access n8n?
+   → Check: docker ps | grep n8n
+   → Start: docker start reviewsignal_n8n
+
+❌ No leads appearing?
+   → Check n8n "Executions" tab for errors
+   → Verify Apollo API key in n8n credentials
+   → Try manual execution in n8n
+
+❌ Database error?
+   → Check: docker ps | grep postgres
+   → Start: docker start reviewsignal_postgres
+
+Full guide: See ACTIVATE_APOLLO_NOW.md
+
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ 🎯 YOUR ACTION NOW                                    ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+1. Open: http://35.246.214.156:5678
+2. Find: "FLOW 7 - Apollo to PostgreSQL"
+3. Toggle: "Active" ✅
+4. Run: ./check_apollo_status.sh
+
+That's it! Then just wait for Feb 14 launch! 🚀
+
+
+═══════════════════════════════════════════════════════════
+Remember:
+✅ Activate Apollo NOW (collect leads while waiting)
+⏳ Check domains weekly (target 75% by Feb 13)
+🚀 Launch Instantly campaign Feb 14
+═══════════════════════════════════════════════════════════

@@ -64,14 +64,14 @@ except ImportError as e:
 @dataclass(frozen=True)
 class AgentConfig:
     """Immutable agent configuration."""
-    
-    # Model hierarchy
-    PRIMARY_MODEL: str = "claude-opus-4-5-20251101"
-    FALLBACK_MODEL: str = "claude-sonnet-4-5-20250514"
-    FAST_MODEL: str = "claude-haiku-4-5-20250514"
+
+    # Model hierarchy (corrected model IDs - 2026-01-31)
+    PRIMARY_MODEL: str = "claude-sonnet-4-20250514"      # Sonnet 4 as primary (cost-effective)
+    FALLBACK_MODEL: str = "claude-sonnet-4-20250514"    # Same as primary for reliability
+    FAST_MODEL: str = "claude-3-haiku-20240307"          # Haiku 3 for quick tasks (stable)
     
     # API settings
-    MAX_TOKENS: int = 8192
+    MAX_TOKENS: int = 4096  # Haiku limit is 4096, Sonnet 4 is 8192
     TEMPERATURE: float = 0.7
     MAX_RETRIES: int = 3
     RETRY_DELAY: float = 2.0
@@ -241,11 +241,11 @@ class ClaudeClient:
     - Cost tracking
     """
     
-    # Cost per 1M tokens (as of 2026)
+    # Cost per 1M tokens (updated 2026-01-31)
     PRICING = {
-        "claude-opus-4-5-20251101": {"input": 15.0, "output": 75.0},
-        "claude-sonnet-4-5-20250514": {"input": 3.0, "output": 15.0},
-        "claude-haiku-4-5-20250514": {"input": 0.25, "output": 1.25}
+        "claude-sonnet-4-20250514": {"input": 3.0, "output": 15.0},
+        "claude-3-5-haiku-20241022": {"input": 0.80, "output": 4.0},
+        "claude-3-haiku-20240307": {"input": 0.25, "output": 1.25}
     }
     
     def __init__(self, api_key: Optional[str] = None):

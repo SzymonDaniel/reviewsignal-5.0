@@ -1,0 +1,11 @@
+# Prometheus configuration update for Neural API
+# Add this section to /etc/prometheus/prometheus.yml
+
+# Neural API - MiniLM Embeddings + Anomaly Detection
+  - job_name: 'neural-api'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['172.17.0.1:8005']
+        labels:
+          service: 'neural-api'
+          component: 'intelligence'

@@ -104,7 +104,7 @@ class User(Base):
     last_login = Column(DateTime, nullable=True)
     
     # Metadata
-    metadata = Column(JSON, default={})
+    extra_data = Column(JSON, default={})
     
     # Relationships
     sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan")
@@ -190,7 +190,7 @@ class Chain(Base):
     
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-    metadata = Column(JSON, default={})
+    extra_data = Column(JSON, default={})
     
     locations = relationship("Location", back_populates="chain")
     
@@ -236,7 +236,7 @@ class Location(Base):
     
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-    metadata = Column(JSON, default={})
+    extra_data = Column(JSON, default={})
     
     chain = relationship("Chain", back_populates="locations")
     reviews = relationship("Review", back_populates="location")
@@ -360,7 +360,7 @@ class Lead(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     contacted_at = Column(DateTime, nullable=True)
     
-    metadata = Column(JSON, default={})
+    extra_data = Column(JSON, default={})
     
     __table_args__ = (
         Index('idx_leads_score_status', 'lead_score', 'status'),
@@ -502,7 +502,7 @@ class Payment(Base):
     created_at = Column(DateTime, server_default=func.now())
     processed_at = Column(DateTime, nullable=True)
     
-    metadata = Column(JSON, default={})
+    extra_data = Column(JSON, default={})
 
 
 # ═══════════════════════════════════════════════════════════════════

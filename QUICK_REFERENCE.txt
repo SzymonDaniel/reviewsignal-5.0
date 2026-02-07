@@ -1,0 +1,90 @@
+═══════════════════════════════════════════════════════════
+    APOLLO WORKFLOW - RETAIL MARKETING DIRECTORS
+    Quick Reference Card
+═══════════════════════════════════════════════════════════
+
+✅ STATUS: CONFIGURED AND ACTIVE
+
+NEXT EXECUTION: 23:00 UTC Tonight (~3 hours)
+
+───────────────────────────────────────────────────────────
+MONITORING COMMANDS
+───────────────────────────────────────────────────────────
+
+# Quick status check
+./monitor_apollo_leads.sh
+
+# Check recent leads
+sudo -u postgres psql -d reviewsignal -c \
+  "SELECT name, title, company, created_at FROM leads \
+   WHERE created_at > '2026-01-30 23:00:00' LIMIT 10;"
+
+# Check workflow executions
+sudo sqlite3 /root/.n8n/database.sqlite \
+  "SELECT startedAt, finished FROM execution_entity \
+   WHERE workflowId = 'C2kIA0mMISzcKnjC' \
+   ORDER BY startedAt DESC LIMIT 1;"
+
+# Check n8n logs
+docker logs n8n --tail 50
+
+# Check API stats
+curl http://localhost:8001/api/stats
+
+───────────────────────────────────────────────────────────
+CURRENT CONFIGURATION
+───────────────────────────────────────────────────────────
+
+Industry:         retail (NOT finance)
+Email Status:     verified (contactEmailStatusV2)
+Titles:           Marketing Director, Head of Marketing,
+                  VP Marketing, CMO
+Locations:        US, UK, Germany, France, Canada
+Company Size:     51-10,000 employees
+Available Leads:  ~7,800 in Apollo
+
+───────────────────────────────────────────────────────────
+EXPECTED RESULTS (After 23:00 UTC)
+───────────────────────────────────────────────────────────
+
+Per Execution:    5-25 leads
+Per Day:          20-100 leads
+Per Week:         140-700 leads
+
+───────────────────────────────────────────────────────────
+VERIFICATION STEPS (After 23:00 UTC Run)
+───────────────────────────────────────────────────────────
+
+1. Wait until 23:05 UTC
+2. Run: ./monitor_apollo_leads.sh
+3. Check for new leads with retail industry
+4. Verify leads have: name, title, company, email
+
+───────────────────────────────────────────────────────────
+MANUAL TEST (Optional - if you can't wait)
+───────────────────────────────────────────────────────────
+
+Open n8n UI: http://35.246.214.156:5678
+Find: "FLOW 7 - Apollo to PostgreSQL"
+Click: "Execute Workflow"
+Wait: 5-10 seconds
+Check: Executions tab for results
+
+───────────────────────────────────────────────────────────
+BACKUP LOCATION
+───────────────────────────────────────────────────────────
+
+/root/.n8n/database.sqlite.backup.20260130_195834
+
+───────────────────────────────────────────────────────────
+FILES CREATED
+───────────────────────────────────────────────────────────
+
+✅ update_workflow_retail.py     - Configuration script
+✅ monitor_apollo_leads.sh       - Monitoring script
+✅ WORKFLOW_UPDATE_COMPLETE.md   - Full documentation
+✅ QUICK_REFERENCE.txt           - This file
+
+═══════════════════════════════════════════════════════════
+
+Last Updated: 2026-01-30 20:00 UTC

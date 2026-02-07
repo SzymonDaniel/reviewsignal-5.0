@@ -162,7 +162,7 @@ class StripePaymentProcessor:
         ),
         SubscriptionTier.STARTER: PricingTier(
             name="Starter",
-            price_id="price_starter_monthly",
+            price_id="price_1Sw5V3GMD6tutrJ2ltkgycJ6",
             amount_cents=250000,  # €2,500
             currency="eur",
             interval="month",
@@ -179,7 +179,7 @@ class StripePaymentProcessor:
         ),
         SubscriptionTier.PRO: PricingTier(
             name="Pro",
-            price_id="price_pro_monthly",
+            price_id="price_1Sw5WFGMD6tutrJ2UpJzwGLb",
             amount_cents=500000,  # €5,000
             currency="eur",
             interval="month",
@@ -198,7 +198,7 @@ class StripePaymentProcessor:
         ),
         SubscriptionTier.ENTERPRISE: PricingTier(
             name="Enterprise",
-            price_id="price_enterprise_monthly",
+            price_id="price_1Sw5WqGMD6tutrJ2VMdKw9UZ",
             amount_cents=1000000,  # €10,000
             currency="eur",
             interval="month",

@@ -1,0 +1,27 @@
+{
+  "per_page": 25,
+  "person_titles": [
+    "Marketing Director",
+    "Director of Marketing",
+    "Head of Marketing",
+    "VP Marketing",
+    "Chief Marketing Officer",
+    "CMO"
+  ],
+  "person_locations": [
+    "United States",
+    "United Kingdom",
+    "Germany",
+    "France",
+    "Canada"
+  ],
+  "organization_industry_tag_ids": ["retail"],
+  "contact_email_status": ["verified"],
+  "organization_num_employees_ranges": [
+    "51,200",
+    "201,500",
+    "501,1000",
+    "1001,5000",
+    "5001,10000"
+  ]
+}

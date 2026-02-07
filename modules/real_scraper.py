@@ -329,8 +329,9 @@ class GoogleMapsRealScraper:
             places_result = self.client.places_nearby(
                 location=(lat, lng),
                 radius=radius,
-                keyword=query,
-                type='restaurant'  # Adjust based on chain type
+                keyword=query
+                # Removed type='restaurant' filter to support all business types
+                # (drugstores, clothing stores, etc.)
             )
             
             places = []
@@ -424,7 +425,7 @@ class GoogleMapsRealScraper:
         cities: List[str],
         country: str = None,
         max_per_city: int = 10
-    ) -> List[PlaceData]:
+    ) -> List[Dict]:
         """
         Scrape all locations of a chain across multiple cities.
         
@@ -478,8 +479,8 @@ class GoogleMapsRealScraper:
             chain=chain_name,
             total_locations=len(all_places)
         )
-        
-        return all_places
+
+        return [place.to_dict() for place in all_places]
     
     def scrape_by_coordinates(
         self,
@@ -546,9 +547,9 @@ class GoogleMapsRealScraper:
                 place_id,
                 fields=[
                     'place_id', 'name', 'formatted_address', 'rating',
-                    'user_ratings_total', 'geometry', 'url', 
+                    'user_ratings_total', 'geometry', 'url',
                     'formatted_phone_number', 'website', 'business_status',
-                    'opening_hours', 'price_level', 'types', 'reviews'
+                    'opening_hours', 'price_level', 'reviews'
                 ]
             )
             
@@ -581,7 +582,7 @@ class GoogleMapsRealScraper:
                 reviews=[r.to_dict() for r in reviews],
                 opening_hours=raw_data.get('opening_hours'),
                 price_level=raw_data.get('price_level'),
-                types=raw_data.get('types', []),
+                types=[],
                 data_quality_score=quality_score,
                 scraped_at=datetime.utcnow().isoformat()
             )
@@ -629,7 +630,7 @@ class GoogleMapsRealScraper:
                 reviews=[],
                 opening_hours=raw_data.get('opening_hours'),
                 price_level=raw_data.get('price_level'),
-                types=raw_data.get('types', []),
+                types=[],
                 data_quality_score=quality_score,
                 scraped_at=datetime.utcnow().isoformat()
             )

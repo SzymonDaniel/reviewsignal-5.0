@@ -22,6 +22,19 @@ class AuditEventType(Enum):
     DATA_SCRAPE = "data_scrape"
     RATE_LIMIT_HIT = "rate_limit_hit"
     ERROR = "error"
+    # GDPR-specific event types
+    GDPR_CONSENT_GRANTED = "gdpr_consent_granted"
+    GDPR_CONSENT_WITHDRAWN = "gdpr_consent_withdrawn"
+    GDPR_CONSENT_EXPIRED = "gdpr_consent_expired"
+    GDPR_DATA_EXPORTED = "gdpr_data_exported"
+    GDPR_DATA_DELETED = "gdpr_data_deleted"
+    GDPR_DATA_ANONYMIZED = "gdpr_data_anonymized"
+    GDPR_REQUEST_CREATED = "gdpr_request_created"
+    GDPR_REQUEST_PROCESSED = "gdpr_request_processed"
+    GDPR_REQUEST_COMPLETED = "gdpr_request_completed"
+    GDPR_REQUEST_REJECTED = "gdpr_request_rejected"
+    GDPR_RETENTION_CLEANUP = "gdpr_retention_cleanup"
+    GDPR_POLICY_UPDATED = "gdpr_policy_updated"
 
 
 class AuditLogger:

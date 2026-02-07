@@ -1,0 +1,27 @@
+[Unit]
+Description=ReviewSignal Main API
+After=network.target postgresql.service redis.service
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=info_betsim
+Group=info_betsim
+WorkingDirectory=/home/info_betsim/reviewsignal-5.0
+ExecStart=/usr/bin/python3 -m uvicorn api.main:app --host 0.0.0.0 --port 8000 --workers 4
+Restart=always
+RestartSec=10
+
+# Environment
+EnvironmentFile=/home/info_betsim/reviewsignal-5.0/.env
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Logging
+StandardOutput=append:/var/log/reviewsignal/api.log
+StandardError=append:/var/log/reviewsignal/api-error.log
+
+[Install]
+WantedBy=multi-user.target

@@ -59,14 +59,13 @@ cp -f /root/reviewsignal-5.0/modules/*.py /root/reviewsignal/modules/
 ls -la /root/reviewsignal/modules/
 ```
 
-**Powinno pokazać DOKŁADNIE 6 plików:**
+**Powinno pokazać DOKŁADNIE 5 plików:**
 ```
--rw-r--r-- 1 root root ~18000 real_scraper.py        ← NOWY! ZASTĘPUJE STARY!
--rw-r--r-- 1 root root ~22000 linkedin_lead_hunter.py
--rw-r--r-- 1 root root ~20000 ml_anomaly_detector.py
--rw-r--r-- 1 root root ~25000 payment_processor.py
--rw-r--r-- 1 root root ~27000 user_manager.py
--rw-r--r-- 1 root root ~26000 database_schema.py
+-rw-r--r-- 1 root root ~26000 real_scraper.py        ← Google Maps API
+-rw-r--r-- 1 root root ~25000 ml_anomaly_detector.py ← ML/AI engine
+-rw-r--r-- 1 root root ~32000 payment_processor.py   ← Stripe payments
+-rw-r--r-- 1 root root ~33000 user_manager.py        ← JWT auth
+-rw-r--r-- 1 root root ~32000 database_schema.py     ← PostgreSQL
 ```
 
 ## KROK 4: Zainstaluj zależności Python
@@ -85,16 +84,12 @@ playwright install-deps
 ```bash
 cd /root/reviewsignal/modules
 
-# Test modułu 5.0.1 (TEN BYŁ WCZEŚNIEJ USZKODZONY!)
-python real_scraper.py
-# Powinno pokazać: "✅ GoogleMapsScraper ready!"
-
-# Test pozostałych modułów
-python linkedin_lead_hunter.py
-python ml_anomaly_detector.py
-python payment_processor.py
-python user_manager.py
-python database_schema.py
+# Test wszystkich modułów
+python real_scraper.py        # Google Maps scraper
+python ml_anomaly_detector.py # ML anomaly detection
+python payment_processor.py   # Stripe payments
+python user_manager.py        # Auth & JWT
+python database_schema.py     # Database models
 ```
 
 **Każdy moduł powinien uruchomić się BEZ BŁĘDÓW i pokazać test output.**
@@ -110,9 +105,9 @@ cat > /root/reviewsignal/.env << 'EOF'
 # Google Maps API
 GOOGLE_MAPS_API_KEY=your_google_maps_api_key_here
 
-# LinkedIn (opcjonalne - do lead huntingu)
-LINKEDIN_EMAIL=your_linkedin_email
-LINKEDIN_PASSWORD=your_linkedin_password
+# Apollo.io (lead generation - ZAMIAST LinkedIn)
+# NIE używamy LinkedIn - ryzyko bana za scraping!
+APOLLO_API_KEY=your_apollo_api_key
 
 # Stripe Payments
 STRIPE_API_KEY=sk_live_xxxxxxxxxxxx
@@ -139,12 +134,11 @@ EOF
 ```
 https://github.com/SzymonDaniel/reviewsignal-5.0
 └── modules/
-    ├── real_scraper.py         # 5.0.1 - ~450 linii (NOWY!)
-    ├── linkedin_lead_hunter.py # 5.0.2 - ~550 linii
-    ├── ml_anomaly_detector.py  # 5.0.3 - ~500 linii
-    ├── payment_processor.py    # 5.0.4 - ~600 linii
-    ├── user_manager.py         # 5.0.5 - ~650 linii
-    └── database_schema.py      # 5.0.6 - ~700 linii
+    ├── real_scraper.py         # 5.0.1 - ~726 linii - Google Maps scraper
+    ├── ml_anomaly_detector.py  # 5.0.2 - ~500 linii - ML anomaly detection
+    ├── payment_processor.py    # 5.0.3 - ~600 linii - Stripe payments
+    ├── user_manager.py         # 5.0.4 - ~650 linii - Auth & users
+    └── database_schema.py      # 5.0.5 - ~700 linii - PostgreSQL models
 ```
 
 ## Docelowa lokalizacja na serwerze:
@@ -153,12 +147,11 @@ https://github.com/SzymonDaniel/reviewsignal-5.0
 /root/reviewsignal/
 ├── .env                        # Konfiguracja
 └── modules/
-    ├── real_scraper.py         # ← TEN PLIK ZASTĘPUJE STARY USZKODZONY!
-    ├── linkedin_lead_hunter.py
-    ├── ml_anomaly_detector.py
-    ├── payment_processor.py
-    ├── user_manager.py
-    └── database_schema.py
+    ├── real_scraper.py         # Google Maps API scraper
+    ├── ml_anomaly_detector.py  # Sentiment & anomaly ML
+    ├── payment_processor.py    # Stripe integration
+    ├── user_manager.py         # JWT auth, roles
+    └── database_schema.py      # SQLAlchemy models
 ```
 
 ---
@@ -167,14 +160,15 @@ https://github.com/SzymonDaniel/reviewsignal-5.0
 
 | Moduł | Plik | Linii | Co robi |
 |--------|------|-------|----------|
-| **5.0.1** | `real_scraper.py` | ~450 | Scraping Google Maps (111 miast DE) |
-| **5.0.2** | `linkedin_lead_hunter.py` | ~550 | Szukanie leadów na LinkedIn |
-| **5.0.3** | `ml_anomaly_detector.py` | ~500 | ML wykrywanie anomalii w recenzjach |
-| **5.0.4** | `payment_processor.py` | ~600 | Płatności Stripe + subskrypcje |
-| **5.0.5** | `user_manager.py` | ~650 | Auth, JWT, sesje, uprawnienia |
-| **5.0.6** | `database_schema.py` | ~700 | PostgreSQL modele + queries |
+| **5.0.1** | `real_scraper.py` | ~726 | Scraping Google Maps (111 miast globalnie) |
+| **5.0.2** | `ml_anomaly_detector.py` | ~500 | ML wykrywanie anomalii w recenzjach |
+| **5.0.3** | `payment_processor.py` | ~600 | Płatności Stripe + subskrypcje |
+| **5.0.4** | `user_manager.py` | ~650 | Auth, JWT, sesje, uprawnienia |
+| **5.0.5** | `database_schema.py` | ~700 | PostgreSQL modele + queries |
 
-**RAZEM: ~3,450 linii production-ready kodu!**
+**Lead generation: Apollo.io (cold outreach) - NIE LinkedIn (ryzyko bana)**
+
+**RAZEM: ~3,176 linii production-ready kodu!**
 
 ---
 
@@ -211,18 +205,17 @@ chmod +x /root/reviewsignal/modules/*.py
 
 ---
 
-# ✅ CHECKLIST DLA COMETA
+# ✅ CHECKLIST
 
 Zaznacz po wykonaniu:
 
 - [ ] Połączyłem się z serwerem przez SSH
 - [ ] Sklonowałem repo: `git clone https://github.com/SzymonDaniel/reviewsignal-5.0.git`
-- [ ] Skopiowałem 6 modułów do `/root/reviewsignal/modules/`
-- [ ] **ZASTĄPIŁEM stary uszkodzony `real_scraper.py`**
-- [ ] Zainstalowałem zależności: `pip install ...`
+- [ ] Skopiowałem 5 modułów do `/root/reviewsignal/modules/`
+- [ ] Zainstalowałem zależności: `pip install -r requirements.txt`
 - [ ] Zainstalowałem Playwright: `playwright install chromium`
 - [ ] Przetestowałem każdy moduł: `python nazwa_modulu.py`
-- [ ] Utworzyłem plik `.env` z kluczami API
+- [ ] Utworzyłem plik `.env` z kluczami API (Apollo.io, nie LinkedIn!)
 - [ ] Wszystkie testy przeszły bez błędów
 
 ---
