@@ -8,7 +8,11 @@ Orchestrates Echo Engine + Singularity Engine signals.
 """
 
 import os
+import sys
 from pathlib import Path
+
+# Add project root to path (needed when run as standalone script via systemd)
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent.parent / '.env')
