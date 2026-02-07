@@ -1,8 +1,8 @@
 # CLAUDE.md - BAZA KONTEKSTU REVIEWSIGNAL.AI
 
-**Ostatnia aktualizacja:** 2026-02-07 08:00 UTC
-**Wersja dokumentu:** 4.0.0
-**Sesja:** FULL AUDIT + 14 FIXES + VERIFICATION (30/30 PASS, 281 tests green)
+**Ostatnia aktualizacja:** 2026-02-07 08:40 UTC
+**Wersja dokumentu:** 4.1.0
+**Sesja:** AUDIT + 14 FIXES + DATA QUALITY OVERHAUL (city 69%, chain_id 96%, 101 chains)
 
 ---
 
@@ -43,10 +43,10 @@ SYSTEM:           ReviewSignal.ai v5.1.0 (Neural Enhanced)
 STAN:             Development / Pre-revenue (INSTANTLY READY!)
 VALUACJA:         €500,000 - €700,000 (asset-based, 727 hedge fund leads!)
 CEL MRR:          €50,000
-LOKALIZACJE:      44,326
+LOKALIZACJE:      44,415 (68.9% z city, 95.9% z chain_id)
 RECENZJE:         61,555
-LEADY:            727 (zsegmentowane: 727)
-SIECI:            89 (w chains table)
+LEADY:            727 (zsegmentowane: 727/727 = 100%)
+SIECI:            101 (w chains table, +12 dodanych 2026-02-07)
 SERWER:           35.246.214.156 (GCP)
 SERWISY:          7/7 UP (100%)
 INSTANTLY:        5 kampanii READY TO LAUNCH! 🚀
@@ -1023,6 +1023,27 @@ reviewsignal.xyz:
 
 - [x] **Git:** 3 commity pushed na GitHub (main)
 
+### 8.13 Data Quality Overhaul (2026-02-07)
+
+- [x] **City extraction z adresow (18,462 lokalizacji naprawionych):**
+  - US: 10,077 | Canada: 1,037 | UK: 1,051 | EU: 5,917 | Asia: 301 | Other: 79
+  - Wynik: city coverage **27.4% -> 68.9%**
+  - Top cities: Berlin 405, London 304, San Antonio 251, Hamburg 250
+
+- [x] **Chain ID matching (21,771 lokalizacji naprawionych):**
+  - Matching po chain_name/name do chains table: 10,772
+  - Dodano 12 brakujacych sieci (Chevron, Shell, BP, ExxonMobil, 7-Eleven, Orlen, Edeka, Netto, Penny, Spar, Auchan, Costa Coffee)
+  - Matching nowych sieci: 10,999
+  - Wynik: chain_id coverage **46.9% -> 95.9%**, chains: **89 -> 101**
+
+- [x] **Flaky test fix:** test_multiple_sessions_per_user
+  - JWT tokeny identyczne w tej samej sekundzie - zmieniono na assert session properties
+  - 281/281 testow passed
+
+- [x] **Disk cleanup:** 91% -> 87% (+1.2 GB)
+
+- [x] **Git:** 40e4ece + e474364 pushed
+
 ---
 
 ## 9. CO DO ZROBIENIA
@@ -1574,14 +1595,15 @@ Po każdej sesji Claude Code powinien:
 - neural-api (8005) - Running, /health OK, model loaded (8,715 samples)
 - production-scraper - Running (0 errors)
 
-**BAZA DANYCH (WYCZYSZCZONA):**
-- Lokalizacje: 44,326
+**BAZA DANYCH (WYCZYSZCZONA + DATA QUALITY FIX):**
+- Lokalizacje: 44,415 (68.9% z city, 95.9% z chain_id)
 - Recenzje: 61,555
 - Leady: 727 (zsegmentowane: 727/727 = 100%)
-- Sieci: 89 w chains table
-- Indeksy: wyczyszczone (0 duplikatow)
+- Sieci: 101 w chains table (+12 dodanych: Chevron, Shell, BP, etc.)
+- Indeksy: wyczyszczone (0 duplikatow, 3 nowe)
 - Legacy schema: usunieta
-- TOP: Millennium 120, Balyasny 114, Two Sigma 75, Point72 51
+- TOP cities: Berlin 405, London 304, San Antonio 251, Hamburg 250
+- TOP leads: Millennium 120, Balyasny 114, Two Sigma 75, Point72 51
 
 **SYSTEM (WZMOCNIONY):**
 - Swap: 4 GB (dodany 2026-02-07)
@@ -1625,7 +1647,9 @@ Po każdej sesji Claude Code powinien:
 - [x] 14 napraw krytycznych (kod, DB, system, bezpieczenstwo)
 - [x] Audyt weryfikacyjny (30/30 PASS, AUDIT_VERIFICATION_2026-02-07.md)
 - [x] 281 unit testow przeszlo (0 failures)
-- [x] 3 commity pushed na GitHub
+- [x] 7 commitow pushed na GitHub
+- [x] Data quality fix: city 27%->69%, chain_id 47%->96%, chains 89->101
+- [x] Flaky test naprawiony (281/281 pass)
 - [x] PROGRESS.md i CLAUDE.md zaktualizowane
 
 ### KOMENDY QUICK START
@@ -1657,4 +1681,4 @@ cd /home/info_betsim/reviewsignal-5.0 && python3 -m pytest tests/unit/ -v
 ---
 
 *Dokument utrzymywany przez Claude AI dla ReviewSignal.ai Team*
-*Wersja 4.0.0 - Full Audit + 14 Fixes + Verification - 2026-02-07 08:00 UTC*
+*Wersja 4.1.0 - Full Audit + Data Quality Overhaul - 2026-02-07 08:40 UTC*
