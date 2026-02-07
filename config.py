@@ -42,6 +42,7 @@ CACHE_TTL = 86400  # 24 hours
 # ═══════════════════════════════════════════════════════════════
 
 GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY', '')
+YELP_API_KEY = os.getenv('YELP_API_KEY', '')  # Yelp Fusion API (second data source)
 STRIPE_API_KEY = os.getenv('STRIPE_API_KEY', '')
 STRIPE_WEBHOOK_SECRET = os.getenv('STRIPE_WEBHOOK_SECRET', '')
 APOLLO_API_KEY = os.getenv('APOLLO_API_KEY', '')  # Lead generation (zamiast LinkedIn)

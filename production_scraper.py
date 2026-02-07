@@ -324,6 +324,22 @@ class ProductionScraper:
 
         # Print stats
         runtime = (datetime.now() - self.stats["start_time"]).total_seconds() / 60
+
+        # Review source breakdown (all reviews in DB)
+        source_stats = {}
+        try:
+            conn = self.get_db_connection()
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT source, COUNT(*) FROM reviews "
+                "GROUP BY source ORDER BY COUNT(*) DESC"
+            )
+            source_stats = {row[0]: row[1] for row in cur.fetchall()}
+            cur.close()
+            self.return_db_connection(conn)
+        except Exception:
+            pass
+
         logger.info("="*70)
         logger.info(f"📊 Cycle complete!")
         logger.info(f"   Locations added: {self.stats['locations_added']}")
@@ -332,6 +348,11 @@ class ProductionScraper:
         logger.info(f"   Reviews validation failed: {self.stats['reviews_validation_failed']}")
         logger.info(f"   Errors: {self.stats['errors']}")
         logger.info(f"   Runtime: {runtime:.1f} minutes")
+        if source_stats:
+            total_reviews = sum(source_stats.values())
+            logger.info(f"   Total reviews in DB: {total_reviews:,}")
+            for source, count in source_stats.items():
+                logger.info(f"     {source}: {count:,}")
         logger.info("="*70)
         logger.info("")
 

@@ -31,6 +31,7 @@ googlemaps==4.10.0
 # ═══════════════════════════════════════════════════════════════
 # Web Scraping (for Google Maps, Yelp, TripAdvisor, Trustpilot)
 # ═══════════════════════════════════════════════════════════════
+requests>=2.31.0
 playwright==1.41.0
 beautifulsoup4==4.12.3
 lxml==5.1.0
