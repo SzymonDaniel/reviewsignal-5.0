@@ -18,7 +18,6 @@ Zero additional infrastructure cost - runs on CPU, uses existing Redis.
 
 import os
 import json
-import pickle
 import hashlib
 import numpy as np
 from collections import deque
@@ -241,7 +240,7 @@ class UnifiedCache:
     # ─────────────────────────────────────────────────────────────
 
     def get_embedding(self, text: str) -> Optional[np.ndarray]:
-        """Get cached embedding for text"""
+        """Get cached embedding for text (safe numpy deserialization, no pickle)"""
         key = self._make_key(self.PREFIX_EMBEDDING, self._hash_text(text))
 
         try:
@@ -249,7 +248,7 @@ class UnifiedCache:
                 data = self.client.get(key)
                 if data:
                     self._stats["hits"] += 1
-                    return pickle.loads(data)
+                    return np.frombuffer(data, dtype=np.float32).copy()
             elif key in self._local_cache:
                 self._stats["hits"] += 1
                 return self._local_cache[key]
@@ -261,11 +260,11 @@ class UnifiedCache:
         return None
 
     def set_embedding(self, text: str, embedding: np.ndarray) -> bool:
-        """Cache embedding for text"""
+        """Cache embedding for text (safe numpy serialization, no pickle)"""
         key = self._make_key(self.PREFIX_EMBEDDING, self._hash_text(text))
 
         try:
-            data = pickle.dumps(embedding)
+            data = embedding.astype(np.float32).tobytes()
             if self.client:
                 self.client.setex(key, self.config.cache_embedding_ttl, data)
             else:
@@ -278,7 +277,7 @@ class UnifiedCache:
             return False
 
     def get_embeddings_batch(self, texts: List[str]) -> Dict[str, Optional[np.ndarray]]:
-        """Get multiple embeddings at once"""
+        """Get multiple embeddings at once (safe numpy deserialization)"""
         results = {}
         keys = [self._make_key(self.PREFIX_EMBEDDING, self._hash_text(t)) for t in texts]
 
@@ -287,7 +286,7 @@ class UnifiedCache:
                 values = self.client.mget(keys)
                 for text, value in zip(texts, values):
                     if value:
-                        results[text] = pickle.loads(value)
+                        results[text] = np.frombuffer(value, dtype=np.float32).copy()
                         self._stats["hits"] += 1
                     else:
                         results[text] = None
@@ -342,26 +341,38 @@ class UnifiedCache:
     # ─────────────────────────────────────────────────────────────
 
     def get_model(self, model_id: str) -> Optional[Any]:
-        """Get cached ML model"""
+        """Get cached ML model from Redis.
+
+        NOTE: Uses joblib (sklearn standard) for model serialization.
+        Redis must be network-isolated (bind 127.0.0.1) to prevent
+        deserialization attacks. Only called on startup/weekly refit.
+        """
+        import io
+        import joblib
+
         key = self._make_key(self.PREFIX_MODEL, model_id)
 
         try:
             if self.client:
                 data = self.client.get(key)
                 if data:
-                    return pickle.loads(data)
+                    return joblib.load(io.BytesIO(data))
         except Exception as e:
             self._stats["errors"] += 1
         return None
 
     def set_model(self, model_id: str, model: Any, ttl: int = 86400 * 7) -> bool:
-        """Cache ML model"""
+        """Cache ML model to Redis using joblib (sklearn standard)."""
+        import io
+        import joblib
+
         key = self._make_key(self.PREFIX_MODEL, model_id)
 
         try:
-            data = pickle.dumps(model)
+            buf = io.BytesIO()
+            joblib.dump(model, buf)
             if self.client:
-                self.client.setex(key, ttl, data)
+                self.client.setex(key, ttl, buf.getvalue())
                 return True
         except Exception as e:
             self._stats["errors"] += 1

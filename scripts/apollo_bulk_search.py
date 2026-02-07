@@ -22,8 +22,11 @@ from typing import List, Dict, Optional
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
+
 # Configuration
-APOLLO_API_KEY = os.getenv('APOLLO_API_KEY', 'koTQfXNe_OM599OsEpyEbA')
+APOLLO_API_KEY = os.getenv('APOLLO_API_KEY', '')
 APOLLO_BASE_URL = "https://api.apollo.io/api/v1"
 LEAD_RECEIVER_URL = "http://localhost:8001/api/lead"
 

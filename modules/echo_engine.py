@@ -946,9 +946,12 @@ def create_echo_engine_from_db(
     elif db_manager:
         engine = db_manager.engine
     else:
-        # Default database URL
+        # Default database URL from env
         db_pass = os.getenv('DB_PASS')
-        engine = create_engine(f'postgresql://reviewsignal:{db_pass}@localhost:5432/reviewsignal')
+        if not db_pass:
+            raise RuntimeError("DB_PASS environment variable must be set")
+        from urllib.parse import quote_plus
+        engine = create_engine(f'postgresql://reviewsignal:{quote_plus(db_pass)}@localhost:5432/reviewsignal')
 
     # Build SQL query for actual database schema
     sql = """

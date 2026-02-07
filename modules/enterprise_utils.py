@@ -361,12 +361,15 @@ class ConnectionPoolManager:
         self.max_connections = max_connections
 
         # Get credentials from environment
+        _db_pass = os.getenv('DB_PASS')
+        if not _db_pass:
+            raise RuntimeError("DB_PASS environment variable must be set")
         self._db_config = {
             'host': os.getenv('DB_HOST', 'localhost'),
             'port': os.getenv('DB_PORT', '5432'),
             'database': os.getenv('DB_NAME', 'reviewsignal'),
             'user': os.getenv('DB_USER', 'reviewsignal'),
-            'password': os.getenv('DB_PASS'),
+            'password': _db_pass,
         }
 
         # Create connection pool
@@ -551,13 +554,17 @@ def check_postgres() -> HealthStatus:
     import psycopg2
     import os
 
+    _db_pass = os.getenv('DB_PASS')
+    if not _db_pass:
+        return HealthResult(name="postgres", status="unhealthy", latency_ms=0, error="DB_PASS not set")
+
     try:
         conn = psycopg2.connect(
             host=os.getenv('DB_HOST', 'localhost'),
             port=os.getenv('DB_PORT', '5432'),
             database=os.getenv('DB_NAME', 'reviewsignal'),
             user=os.getenv('DB_USER', 'reviewsignal'),
-            password=os.getenv('DB_PASS'),
+            password=_db_pass,
             connect_timeout=5
         )
         cursor = conn.cursor()

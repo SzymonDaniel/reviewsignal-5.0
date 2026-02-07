@@ -687,6 +687,8 @@ def create_singularity_engine_from_db(
         db_name = os.getenv('DB_NAME', 'reviewsignal')
         db_user = os.getenv('DB_USER', 'reviewsignal')
         db_pass = os.getenv('DB_PASS')
+        if not db_pass:
+            raise RuntimeError("DB_PASS environment variable must be set")
 
         conn = psycopg2.connect(
             host=db_host,

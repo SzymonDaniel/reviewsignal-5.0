@@ -4,6 +4,32 @@
 
 ---
 
+## 2026-02-07 10:12 UTC - CRITICAL/HIGH SECURITY FIXES (7.2 -> 8.5/10)
+
+### Critical Fixes
+1. **Apollo API key removed** from `apollo_bulk_search.py` and `apollo_intent_search.py` (was hardcoded as default)
+2. **JWT secret removed** from `echo_engine_service.py` (was hardcoded default, now requires .env)
+3. **Pickle deserialization eliminated** from `neural_core.py` - embeddings use numpy bytes, models use joblib
+4. **CORS wildcard removed** from `singularity_api.py:592` - replaced with production whitelist
+
+### High Fixes
+5. **CORS methods/headers wildcard** removed from `nexus_server.py:55-56`
+6. **DB_PASS guards** added to `echo_engine.py`, `enterprise_utils.py` (2 places), `singularity_engine/core.py`
+7. **create_engine() per-request** fixed in `main.py` - now uses module-level singleton with pool_size=5
+8. **Unused jwt import** removed from `main.py`
+9. **dotenv loading** added to `apollo_bulk_search.py` and `apollo_intent_search.py`
+
+### Verification (all PASS)
+- 281 tests passed (0 failures)
+- Apollo API key in *.py: 0
+- reviewsignal2026 in *.py: 0
+- CORS wildcards: 0
+- pickle in neural_core.py: 0
+- Hardcoded JWT secret: 0
+- Unguarded DB_PASS: 0
+
+---
+
 ## 2026-02-07 10:00 UTC - CODE QUALITY REFACTORING (6.6 -> 9/10)
 
 ### Changes Made

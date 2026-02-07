@@ -6,12 +6,17 @@ Runs the Echo Engine API on port 8002
 
 import os
 import sys
-
-# Set environment
-os.environ.setdefault('JWT_SECRET', 'reviewsignal_production_secret_key_2026_minimum32chars')
+from pathlib import Path
 
 # Add project to path
-sys.path.insert(0, '/home/info_betsim/reviewsignal-5.0')
+sys.path.insert(0, str(Path(__file__).parent))
+
+from dotenv import load_dotenv
+load_dotenv(Path(__file__).parent / '.env')
+
+# Validate required env vars
+if not os.getenv('JWT_SECRET') or len(os.getenv('JWT_SECRET', '')) < 32:
+    raise RuntimeError("JWT_SECRET must be set in .env and be at least 32 characters")
 
 # Import and run
 import uvicorn

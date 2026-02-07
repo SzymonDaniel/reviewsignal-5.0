@@ -23,8 +23,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 import structlog
-import jwt
 from functools import lru_cache
+from sqlalchemy import create_engine, text
 
 from config import DATABASE_URL, JWT_SECRET, PRICING_TIERS
 from modules.enterprise_utils import (
@@ -36,6 +36,9 @@ from modules.enterprise_utils import (
 from api.gdpr_api import router as gdpr_router
 
 logger = structlog.get_logger()
+
+# Shared SQLAlchemy engine (singleton, not per-request)
+_sa_engine = create_engine(DATABASE_URL, pool_size=5, pool_pre_ping=True)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # FASTAPI APP CONFIGURATION
@@ -219,11 +222,7 @@ async def verify_api_key(
     x_api_key: str = Header(..., description="API Key for authentication")
 ) -> APIKeyInfo:
     """Verify API key and return user info"""
-    from sqlalchemy import create_engine, text
-
-    engine = create_engine(DATABASE_URL)
-
-    with engine.connect() as conn:
+    with _sa_engine.connect() as conn:
         result = conn.execute(
             text("""
                 SELECT ak.id, ak.key_hash, ak.user_id, ak.tier, ak.is_active, ak.expires_at,
@@ -421,14 +420,10 @@ async def get_sentiment(
         user=api_key.user_id
     )
 
-    from sqlalchemy import create_engine, text
-
-    engine_db = create_engine(DATABASE_URL)
-
     brands_data = {}
     all_sentiments = []
 
-    with engine_db.connect() as conn:
+    with _sa_engine.connect() as conn:
         for brand in request.brands:
             result = conn.execute(
                 text("""
