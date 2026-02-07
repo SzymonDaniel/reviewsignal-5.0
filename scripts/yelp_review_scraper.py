@@ -116,8 +116,8 @@ def get_locations_needing_reviews(
         "WHERE (SELECT COUNT(*) FROM reviews r "
         "   WHERE r.location_id = sub.id AND r.source = 'yelp') < %s "
         "ORDER BY yelp_review_count ASC, sub.id "
-        "LIMIT %s".format(subquery)
-    )
+        "LIMIT %s"
+    ).format(subquery)
 
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute(full_query, params)
@@ -132,10 +132,10 @@ def save_reviews(conn, location_id: int, reviews: List[dict]) -> int:
     saved = 0
     with conn.cursor() as cur:
         for review in reviews:
-            author = review.get("author_name", "Anonymous")
+            author = review.get("user_name") or review.get("author_name", "Anonymous")
             rating = review.get("rating", 0)
             text = review.get("text", "")
-            time_posted = review.get("time_posted", "")
+            time_posted = review.get("time_created") or review.get("time_posted", "")
             language = review.get("language", "en")
 
             # Validate
@@ -267,7 +267,9 @@ def main():
             api_calls += 1
 
             if raw_reviews:
-                saved = save_reviews(conn, loc_id, raw_reviews)
+                # Convert dataclass objects to dicts if needed
+                review_dicts = [r.to_dict() if hasattr(r, 'to_dict') else r for r in raw_reviews]
+                saved = save_reviews(conn, loc_id, review_dicts)
                 total_reviews_saved += saved
                 if saved > 0:
                     locations_with_new_reviews += 1

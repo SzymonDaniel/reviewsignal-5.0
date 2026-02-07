@@ -198,7 +198,7 @@ curl http://localhost:9090/-/healthy
 ```
 URL:      http://35.246.214.156:3001
 Username: admin
-Password: reviewsignal2026
+Password: <REDACTED>
 ```
 
 **First Login:**

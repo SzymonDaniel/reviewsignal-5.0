@@ -71,7 +71,7 @@
 ```
 psycopg2.OperationalError: password authentication failed for user "reviewsignal"
 ```
-**Problem:** Hasło w ENV (`reviewsignal2026`) nie pasuje do konfiguracji PostgreSQL.
+**Problem:** Hasło w ENV (`<REDACTED>`) nie pasuje do konfiguracji PostgreSQL.
 **Fix:** Zaktualizować hasło w pg_hba.conf lub w ENV.
 
 ### 2. Lead Receiver - brak pól domain/industry
@@ -114,7 +114,7 @@ API Error 400 - thinking blocks cannot be modified
 sudo cat /etc/postgresql/14/main/pg_hba.conf | grep reviewsignal
 
 # Opcja A: Zmień hasło użytkownika
-sudo -u postgres psql -c "ALTER USER reviewsignal PASSWORD 'reviewsignal2026';"
+sudo -u postgres psql -c "ALTER USER reviewsignal PASSWORD '<REDACTED>';"
 
 # Opcja B: Zaktualizuj ENV w systemd service
 sudo nano /etc/systemd/system/lead-receiver.service
@@ -218,7 +218,7 @@ WHERE id = 3;
 
 ### ✅ 1. Naprawa DB Auth dla Lead Receiver
 ```bash
-sudo -u postgres psql -c "ALTER USER reviewsignal WITH PASSWORD 'reviewsignal2026';"
+sudo -u postgres psql -c "ALTER USER reviewsignal WITH PASSWORD '<REDACTED>';"
 # Wynik: ALTER ROLE - sukces
 ```
 

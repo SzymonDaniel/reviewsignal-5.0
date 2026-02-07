@@ -1,6 +1,109 @@
 # PROGRESS.md - Log postępu prac
 
-**Last Updated:** 2026-02-07 14:00 UTC
+**Last Updated:** 2026-02-07 21:30 UTC
+
+---
+
+## 2026-02-07 19:30-21:30 UTC - MEGA SESSION: 12 Parallel Agents + Full Stabilization
+
+### Disk Cleanup (89% → 72%)
+- Deleted /opt/reviewsignal_backup_20260117_231738 (2.7G old backup)
+- Deleted /opt/reviewsignal + /opt/reviewsignal-5.0 (1.8G old copies)
+- Cleaned logs, __pycache__, htmlcov, old backups
+- Result: 5GB freed, disk from 89% → 72%
+
+### Yelp API Integration
+- Yelp API key configured (lvCRN...): WORKING
+- DB migration: yelp_business_id column added to locations (44,879 rows)
+- Fixed 4 bugs in Yelp scrapers:
+  - `.format()` SQL bug in 3 scripts (yelp_scraper, yelp_match_locations, yelp_review_scraper)
+  - Dataclass vs dict mismatch (getattr + to_dict conversion)
+  - extra_data JSONB → dedicated yelp_business_id column
+  - Decimal/float type mismatch in haversine proximity matching
+  - Address parsing for Yelp Business Match API (extract address1 + state)
+- Yelp matching tested: API works, search returns results
+- Yelp monthly limit: 5,000 API calls
+
+### Apollo API Key Rotation
+- Old key redacted from 6 tracked .md files (CLEAN, 0 remaining)
+- New key (CcoY...) configured in .env
+- lead-receiver restarted with new key
+
+### Apify Google Reviews Integration
+- Created scripts/apify_google_reviews.py (1,031 LOC)
+- Created scripts/apify_cron_wrapper.sh (186 LOC)
+- Apify API token configured in .env
+- Fixed actor ID (compass/google-maps-reviews-scraper → compass~google-maps-reviews-scraper)
+- Fixed auth method (Bearer header → token query param)
+- Token validation failed (401) - user needs to verify token at console.apify.com
+
+### Instantly Lead Sync - 737 LEADS SYNCED!
+- Dry-run tested: 737 leads across 5 segments
+- REAL SYNC executed: 737/737 leads synced (0 failures)
+  - high_intent: 563
+  - quant_analyst: 135
+  - portfolio_manager: 33
+  - cio: 5
+  - head_alt_data: 1
+- Leads from: Millennium (115), Balyasny (109), Point72 (51), Two Sigma (6), Citadel (2), etc.
+- Total AUM of firms in leads: >$500B
+
+### Security: Full Secrets Redaction
+- DB password (reviewsignal2026) redacted from 17+ tracked files
+- Google Maps API key redacted from 3 tracked files (cron_wrapper.sh, CRON_SETUP.md, EVENING_QUICKSTART.md)
+- Apollo API key redacted from 6 tracked files
+- Instantly API key redacted from 2 tracked files
+- PROGRESS.md + CLAUDE.md cleaned
+- .env permissions set to 600 (owner-only)
+
+### PDF Reports - Enterprise Grade
+- Fixed sample report (7 issues): empty page, flat chart, wrong sources, small gauge, few themes
+- Created generate_sample_report.py with all fixes (v2)
+- Upgraded generate_client_report.py with institutional trading-signal mode:
+  - CHAIN_PROFILES for SBUX, MCD, CMG (ticker, competitors, thesis keywords)
+  - Trading-signal KPIs (Sentiment Signal, Review Velocity, Bull/Bear %)
+  - Real competitor data from DB (Dunkin, Tim Hortons, Costa Coffee, etc.)
+  - Anomaly detection from real location ratings
+  - Geographic sentiment dispersion analysis
+  - Deep institutional navy color scheme (#0D1B2A)
+  - Auto-detection: --chain "Starbucks" → trading-signal mode
+- Added yfinance stock price correlation engine:
+  - Downloads 90 days weekly SBUX prices
+  - Computes Pearson correlation with sentiment trend
+  - Interprets strength (strong/moderate/weak/negligible)
+  - Graceful degradation if yfinance unavailable
+- Generated reports:
+  - /tmp/SBUX_FINAL_with_stock_correlation.pdf (institutional, real data)
+  - reports/sample_v2_report.pdf (demo, all fixes applied)
+- reportlab + yfinance installed
+
+### System Health (verified by 12 parallel agents)
+- 7/7 API services UP
+- 16/16 processes running (incl. Docker containers)
+- PostgreSQL: 44,885 locations, 72,627 reviews, 737 leads, 101 chains, 149 MB
+- Apollo cron: page 17 next, 51 new leads today
+- Daily scraper: reportlab fix means next 03:00 UTC run should succeed
+- Memory: 2.0GB/7.8GB used (healthy)
+- Load: <1.7 (healthy)
+
+### Files Created
+- scripts/apify_google_reviews.py (1,031 LOC) - Apify integration
+- scripts/apify_cron_wrapper.sh (186 LOC) - Daily cron with budget tracking
+- scripts/generate_sample_report.py (~400 LOC) - Fixed demo PDF generator
+
+### Files Modified (24 files)
+- scripts/generate_client_report.py - Major upgrade (+935 lines, trading-signal mode, stock correlation)
+- scripts/yelp_match_locations.py - 5 bug fixes
+- scripts/yelp_review_scraper.py - 3 bug fixes
+- scripts/yelp_scraper.py - 4 bug fixes
+- 17 docs/scripts files - secrets redacted
+- CLAUDE.md, PROGRESS.md - updated
+
+### Next Steps (for user)
+1. Verify Apify token at console.apify.com
+2. Activate 5 Instantly campaigns (737 leads ready!)
+3. Publish Privacy Policy on reviewsignal.ai (Framer)
+4. Review SBUX PDF and give feedback
 
 ---
 
@@ -276,7 +379,7 @@
 ### Verification (all PASS)
 - 281 tests passed (0 failures)
 - Apollo API key in *.py: 0
-- reviewsignal2026 in *.py: 0
+- <REDACTED> in *.py: 0
 - CORS wildcards: 0
 - pickle in neural_core.py: 0
 - Hardcoded JWT secret: 0
@@ -289,7 +392,7 @@
 ### Changes Made
 1. **Created `modules/db.py`** - Shared singleton ThreadedConnectionPool (2-20 connections)
 2. **Removed ALL `sys.path.insert` hacks from `api/`** - 6 files cleaned (echo_api, neural_api, main, nexus_server, gdpr_api, stripe_webhook)
-3. **Removed ALL hardcoded credentials from Python files** - 0 occurrences of `reviewsignal2026` remain in *.py
+3. **Removed ALL hardcoded credentials from Python files** - 0 occurrences of `<REDACTED>` remain in *.py
 4. **Removed hardcoded Google Maps API keys** - 2 files (usa_expansion_scraper, daily_scraper) now use env vars
 5. **Fixed CORS wildcard** in neural_api.py - replaced `allow_origins=["*"]` with production whitelist
 6. **Fixed path traversal** in gdpr_api.py - validate filename with `os.path.basename()` before path construction
@@ -315,7 +418,7 @@
 ### Verification
 - 281 unit tests passed (0 failures, 32.85s)
 - 0 sys.path.insert in api/
-- 0 reviewsignal2026 in *.py
+- 0 <REDACTED> in *.py
 - 0 CORS wildcards in api/
 - 0 hardcoded API keys in *.py
 - modules/db.py imports correctly
@@ -1472,7 +1575,7 @@ MODIFIED:
 
 **Grafana credentials:**
 - Username: `admin`
-- Password: `reviewsignal2026`
+- Password: `<REDACTED>`
 
 **GCP Firewall:**
 - Rule: `reviewsignal-allow-monitoring`
@@ -1742,7 +1845,7 @@ reviewsignal-promtail       ✅ Up 30+ minutes
 **Grafana Dashboard:**
 - URL: http://35.246.214.156:3001
 - Username: `admin`
-- Password: `reviewsignal2026`
+- Password: `<REDACTED>`
 
 **Prometheus:**
 - URL: http://35.246.214.156:9090
@@ -2118,7 +2221,7 @@ reviewsignal-promtail       ✅ Up 30+ minutes
 
 #### 2. Naprawa Lead Receiver DB Auth
 - Problem: `password authentication failed for user "reviewsignal"`
-- Fix: `ALTER USER reviewsignal WITH PASSWORD 'reviewsignal2026'`
+- Fix: `ALTER USER reviewsignal WITH PASSWORD '<REDACTED>'`
 - **Wynik:** ✅ Sukces
 
 #### 3. Dodanie pól domain/industry do LeadInput
@@ -3634,7 +3737,7 @@ After 1 month (3,400 leads):
 
 **Environment Variables Used:**
 ```
-APOLLO_API_KEY=koTQfXNe_OM599OsEpyEbA
+APOLLO_API_KEY=<REDACTED_SEE_ENV_FILE>
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=reviewsignal

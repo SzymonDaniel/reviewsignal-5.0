@@ -100,7 +100,7 @@ gsutil cp gs://reviewsignal-backups/database/reviewsignal_latest.sql.gz .
 
 # Restore PostgreSQL
 sudo -u postgres createdb reviewsignal
-sudo -u postgres createuser reviewsignal -P  # Password: reviewsignal2026
+sudo -u postgres createuser reviewsignal -P  # Password: <REDACTED>
 gunzip < reviewsignal_latest.sql.gz | sudo -u postgres psql reviewsignal
 
 # Verify
@@ -133,10 +133,10 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=reviewsignal
 DB_USER=reviewsignal
-DB_PASS=reviewsignal2026
-INSTANTLY_API_KEY=MDA1ZWRjY2EtZGZmYi00ZjBiLTgzODUtYzEzMjU0MGM0NDRkOnBWQ1hiTmhCeHF6Rg==
+DB_PASS=<REDACTED>
+INSTANTLY_API_KEY=<REDACTED_SEE_ENV>
 INSTANTLY_CAMPAIGN_ID=f30d31ff-46fe-4ae6-a602-597643a17a0c
-APOLLO_API_KEY=koTQfXNe_OM599OsEpyEbA
+APOLLO_API_KEY=<REDACTED_SEE_ENV_FILE>
 EOF
 ```
 

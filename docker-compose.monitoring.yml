@@ -32,7 +32,7 @@ services:
       - "3001:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=reviewsignal2026
+      - GF_SECURITY_ADMIN_PASSWORD=<REDACTED>
       - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
       - GF_SERVER_ROOT_URL=http://35.246.214.156:3001
     volumes:

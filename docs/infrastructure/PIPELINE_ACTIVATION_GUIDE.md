@@ -49,7 +49,7 @@ Credentials: [Your n8n login]
 **Node 2: Apollo Search**
 - URL: https://api.apollo.io/v1/mixed_people/search
 - Method: POST
-- Headers: `api_key: koTQfXNe_OM599OsEpyEbA`
+- Headers: `api_key: <REDACTED_SEE_ENV_FILE>`
 - Body:
 ```json
 {

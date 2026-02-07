@@ -72,7 +72,7 @@ Environment="DB_HOST=localhost"
 Environment="DB_PORT=5432"
 Environment="DB_NAME=reviewsignal"
 Environment="DB_USER=reviewsignal"
-Environment="DB_PASS=reviewsignal2026"
+Environment="DB_PASS=<REDACTED>"
 Environment="STRIPE_API_KEY=sk_test_YOUR_KEY_HERE"
 Environment="STRIPE_WEBHOOK_SECRET=whsec_YOUR_SECRET_HERE"
 

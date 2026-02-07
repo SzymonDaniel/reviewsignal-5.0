@@ -1059,7 +1059,7 @@ reviewsignal.xyz:
   - Uzyty przez: lead_receiver, stripe_webhook, production_scraper, mass_review_scraper, coverage_scraper
 
 - [x] **Usunieto WSZYSTKIE hardcoded credentials z *.py (0 remaining):**
-  - `reviewsignal2026` password: 13 plikow -> 0
+  - `<REDACTED>` password: 13 plikow -> 0
   - Google Maps API key: 2 pliki -> 0
   - Apollo API key: 2 pliki -> 0 (byl commitowany do git!)
   - JWT secret: 1 plik -> 0 (echo_engine_service.py)
@@ -1321,7 +1321,7 @@ Pełna analiza: `VALUATION_REPORT.md`
 
 **Security Scan Results (ALL PASS):**
 ```
-reviewsignal2026 in *.py:     0 (was 13)
+<REDACTED> in *.py:     0 (was 13)
 Hardcoded API keys in *.py:   0 (was 4)
 CORS allow_origins=["*"]:     0 (was 2)
 sys.path.insert in api/:      0 (was 6)
@@ -1797,7 +1797,7 @@ f75400a Code quality refactoring: shared DB module, remove hardcoded credentials
 
 ```bash
 # Sprawdz code quality (wszystko powinno byc 0)
-grep -r "reviewsignal2026" --include="*.py" .
+grep -r "<REDACTED>" --include="*.py" .
 grep -r "AIzaSy" --include="*.py" .
 grep -r 'allow_origins=\["\*"\]' --include="*.py" .
 grep -rn "sys.path.insert.*'/home/info_betsim" --include="*.py" .

@@ -94,7 +94,7 @@ Disk: ~500MB
 Grafana Dashboard:
   URL:      http://35.246.214.156:3001
   Username: admin
-  Password: reviewsignal2026
+  Password: <REDACTED>
 
 Prometheus:
   URL:      http://35.246.214.156:9090

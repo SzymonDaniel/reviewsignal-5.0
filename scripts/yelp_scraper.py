@@ -145,8 +145,8 @@ def get_locations_for_chain(
         "FROM locations l "
         "WHERE {} "
         "ORDER BY l.id "
-        "LIMIT %s".format(where)
-    )
+        "LIMIT %s"
+    ).format(where)
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute(query, params)
         return cur.fetchall()
@@ -205,10 +205,10 @@ def save_yelp_reviews_batch(conn, location_id: int,
     saved = 0
     with conn.cursor() as cur:
         for review in reviews:
-            author = review.get("author_name", "Anonymous")
+            author = review.get("user_name") or review.get("author_name", "Anonymous")
             rating = review.get("rating", 0)
             text = review.get("text", "")
-            time_posted = review.get("time_posted", "")
+            time_posted = review.get("time_created") or review.get("time_posted", "")
             language = review.get("language", "en")
 
             # Validate review
@@ -276,8 +276,8 @@ def match_yelp_to_location(
     address = location.get("address", "")
     city = location.get("city", "")
     country = location.get("country", "")
-    lat = location.get("latitude")
-    lng = location.get("longitude")
+    lat = float(location.get("latitude")) if location.get("latitude") is not None else None
+    lng = float(location.get("longitude")) if location.get("longitude") is not None else None
 
     # --- Attempt 1: Exact match API ---
     try:
@@ -311,14 +311,14 @@ def match_yelp_to_location(
         best_id = None
         best_distance = float("inf")
         for biz in results:
-            biz_lat = biz.get("latitude") or biz.get("coordinates", {}).get("latitude")
-            biz_lng = biz.get("longitude") or biz.get("coordinates", {}).get("longitude")
+            biz_lat = getattr(biz, "latitude", None)
+            biz_lng = getattr(biz, "longitude", None)
             if biz_lat is None or biz_lng is None or lat is None or lng is None:
                 continue
             dist = haversine_m(lat, lng, float(biz_lat), float(biz_lng))
             if dist < best_distance:
                 best_distance = dist
-                best_id = biz.get("id") or biz.get("business_id")
+                best_id = getattr(biz, "id", None)
 
         if best_id and best_distance <= MAX_MATCH_DISTANCE_M:
             # Confidence inversely proportional to distance
@@ -464,7 +464,8 @@ def main():
                         raw_reviews = scraper.get_business_reviews(yelp_id)
                         api_calls_used += 1
                         if raw_reviews:
-                            saved = save_yelp_reviews_batch(conn, loc_id, raw_reviews)
+                            review_dicts = [r.to_dict() if hasattr(r, 'to_dict') else r for r in raw_reviews]
+                            saved = save_yelp_reviews_batch(conn, loc_id, review_dicts)
                             total_reviews_saved += saved
                     except Exception as e:
                         total_errors += 1

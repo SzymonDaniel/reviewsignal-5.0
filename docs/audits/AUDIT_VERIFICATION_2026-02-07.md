@@ -65,7 +65,7 @@ WYNIK:             100% PASS
 
 | # | Check | Wynik | Dowod |
 |---|-------|-------|-------|
-| 17 | Apollo key GONE z CLAUDE.md | **PASS** | 0 wystapien `koTQfXNe_OM599OsEpyEbA` |
+| 17 | Apollo key GONE z CLAUDE.md | **PASS** | 0 wystapien `<REDACTED_SEE_ENV_FILE>` |
 | 18 | Instantly key GONE z CLAUDE.md | **PASS** | 0 wystapien `MDA1ZWRjY2EtZGZmYi00ZjBi` |
 | 19 | DB password GONE z CLAUDE.md | **PASS** | 0 wystapien `reviewsignal2026` |
 

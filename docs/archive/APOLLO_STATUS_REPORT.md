@@ -299,7 +299,7 @@ sudo sqlite3 /root/.n8n/database.sqlite \
 
 2. **Apollo Search** (HTTP Request)
    - POST to `https://api.apollo.io/api/v1/mixed_people/search`
-   - Headers: `X-Api-Key: koTQfXNe_OM599OsEpyEbA`
+   - Headers: `X-Api-Key: <REDACTED_SEE_ENV_FILE>`
    - Body: Search criteria (JSON)
 
 3. **Split People** (Item Lists)

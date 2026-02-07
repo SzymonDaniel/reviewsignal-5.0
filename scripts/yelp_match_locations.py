@@ -87,8 +87,7 @@ def get_unmatched_locations(
         "length(l.name) > 0",
         "l.city IS NOT NULL",
         "length(l.city) > 0",
-        "(l.extra_data IS NULL "
-        " OR l.extra_data->>'yelp_business_id' IS NULL)",
+        "l.yelp_business_id IS NULL",
     ]
     params: list = []
 
@@ -101,15 +100,15 @@ def get_unmatched_locations(
 
     query = (
         "SELECT l.id, l.name, l.address, l.city, l.country, "
-        "l.latitude, l.longitude, l.chain_name, c.name AS chain "
+        "l.latitude, l.longitude, l.chain_name, l.yelp_business_id, c.name AS chain "
         "FROM locations l "
         "LEFT JOIN chains c ON l.chain_id = c.id "
         "WHERE {} "
         "ORDER BY "
         "  CASE WHEN l.chain_id IS NOT NULL THEN 0 ELSE 1 END, "
         "  l.id "
-        "LIMIT %s".format(where)
-    )
+        "LIMIT %s"
+    ).format(where)
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute(query, params)
         return cur.fetchall()
@@ -117,21 +116,16 @@ def get_unmatched_locations(
 
 def save_match(conn, location_id: int, yelp_id: str,
                confidence: float) -> None:
-    """Store yelp_business_id in extra_data JSONB."""
+    """Store yelp_business_id in the dedicated column."""
     with conn.cursor() as cur:
         cur.execute(
             """
             UPDATE locations
-            SET extra_data = COALESCE(extra_data, '{}'::jsonb)
-                || jsonb_build_object(
-                    'yelp_business_id', %s::text,
-                    'yelp_match_confidence', %s::float,
-                    'yelp_matched_at', %s::text
-                ),
+            SET yelp_business_id = %s,
                 updated_at = NOW()
             WHERE id = %s
             """,
-            (yelp_id, confidence, datetime.utcnow().isoformat(), location_id),
+            (yelp_id, location_id),
         )
     conn.commit()
 
@@ -157,18 +151,29 @@ def try_match(
     address = location.get("address", "")
     city = location.get("city", "")
     country = location.get("country", "")
-    lat = location.get("latitude")
-    lng = location.get("longitude")
+    lat = float(location.get("latitude")) if location.get("latitude") is not None else None
+    lng = float(location.get("longitude")) if location.get("longitude") is not None else None
 
     api_calls = 0
 
     # --- Attempt 1: Exact match ---
+    # Parse address1 from full address (e.g. "1912 Pike Pl, Seattle, WA 98101, USA" → "1912 Pike Pl")
+    address1 = address.split(",")[0].strip() if address else ""
+    # Try to extract state from address for US locations
+    state = ""
+    if country in ("US", "United States") and address:
+        parts = [p.strip() for p in address.split(",")]
+        for part in parts:
+            tokens = part.split()
+            if len(tokens) >= 2 and len(tokens[-2]) == 2 and tokens[-2].isupper():
+                state = tokens[-2]
+                break
     try:
         yelp_id = scraper.match_business(
             name=name,
-            address=address,
+            address=address1,
             city=city,
-            state="",
+            state=state,
             country=country,
         )
         api_calls += 1
@@ -198,14 +203,14 @@ def try_match(
         best_id = None
         best_distance = float("inf")
         for biz in results:
-            biz_lat = biz.get("latitude") or biz.get("coordinates", {}).get("latitude")
-            biz_lng = biz.get("longitude") or biz.get("coordinates", {}).get("longitude")
+            biz_lat = getattr(biz, "latitude", None)
+            biz_lng = getattr(biz, "longitude", None)
             if biz_lat is None or biz_lng is None or lat is None or lng is None:
                 continue
             dist = haversine_m(lat, lng, float(biz_lat), float(biz_lng))
             if dist < best_distance:
                 best_distance = dist
-                best_id = biz.get("id") or biz.get("business_id")
+                best_id = getattr(biz, "id", None)
 
         if best_id and best_distance <= MAX_MATCH_DISTANCE_M:
             confidence = max(0.5, 1.0 - (best_distance / MAX_MATCH_DISTANCE_M) * 0.5)

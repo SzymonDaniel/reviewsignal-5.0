@@ -292,7 +292,7 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=reviewsignal
 DB_USER=reviewsignal
-DB_PASS=reviewsignal2026
+DB_PASS=<REDACTED>
 ```
 
 ### Step 2: Install Python Dependencies

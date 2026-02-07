@@ -136,7 +136,7 @@ Test the Apollo search manually:
 
 ```bash
 curl -X POST https://api.apollo.io/api/v1/mixed_people/search \
-  -H "X-Api-Key: koTQfXNe_OM599OsEpyEbA" \
+  -H "X-Api-Key: <REDACTED_SEE_ENV_FILE>" \
   -H "Content-Type: application/json" \
   -d '{
     "per_page": 25,
@@ -208,7 +208,7 @@ If the search criteria return 0 people, you'll need to:
 2. **Test Apollo API**
    ```bash
    curl -X POST https://api.apollo.io/api/v1/mixed_people/search \
-     -H "X-Api-Key: koTQfXNe_OM599OsEpyEbA" \
+     -H "X-Api-Key: <REDACTED_SEE_ENV_FILE>" \
      -H "Content-Type: application/json" \
      -d '{"per_page": 5, "person_titles": ["Portfolio Manager"]}'
    ```

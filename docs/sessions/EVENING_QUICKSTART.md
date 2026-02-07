@@ -32,7 +32,7 @@ SQL
 python3 << 'PY'
 from modules.real_scraper import GoogleMapsRealScraper
 import os
-os.environ['GOOGLE_MAPS_API_KEY'] = 'AIzaSyDZYIYVfDYVV8KMtQdbKJEnYufhwswI3Wk'
+os.environ['GOOGLE_MAPS_API_KEY'] = '<REDACTED_SEE_ENV>'
 
 scraper = GoogleMapsRealScraper(api_key=os.environ['GOOGLE_MAPS_API_KEY'])
 places = scraper.scrape_chain("Starbucks", ["Seattle, WA, USA"], max_per_city=2)
