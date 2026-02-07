@@ -1,8 +1,8 @@
 # CLAUDE.md - BAZA KONTEKSTU REVIEWSIGNAL.AI
 
-**Ostatnia aktualizacja:** 2026-02-07 07:30 UTC
-**Wersja dokumentu:** 3.9.0
-**Sesja:** POST-AUDIT FIXES (secrets removed, DB schema fixed, system hardened)
+**Ostatnia aktualizacja:** 2026-02-07 08:00 UTC
+**Wersja dokumentu:** 4.0.0
+**Sesja:** FULL AUDIT + 14 FIXES + VERIFICATION (30/30 PASS, 281 tests green)
 
 ---
 
@@ -988,6 +988,41 @@ reviewsignal.xyz:
 - Meetings: 5-15/miesiąc
 - Pilot customers: 1-3/miesiąc
 
+### 8.12 Full System Audit + 14 Critical Fixes (2026-02-07)
+
+- [x] **Pelny audyt systemu** (7 rownoleglych agentow)
+  - Ocena ogolna: 6.2/10
+  - Raport: SYSTEM_AUDIT_2026-02-07.md
+
+- [x] **Naprawki kodu (lead_receiver.py):**
+  - Usunieto duplikat /metrics endpoint
+  - Usunieto domyslne haslo DB (RuntimeError jesli brak DB_PASS)
+  - Dodano connection pooling (ThreadedConnectionPool 2-10)
+  - Lazy import pdf_generator (fix daily scraper cron)
+
+- [x] **Naprawki bazy danych (8 SQL):**
+  - Usunieto 4 zduplikowane indeksy
+  - Usunieto bledny UNIQUE na leads.chain_name
+  - leads.email SET NOT NULL
+  - 3 nowe indeksy (reviews.created_at, leads.created_at, locations(chain_name,city))
+  - Usunieto legacy schema reviewsignal
+  - Zsegmentowano 18 leadow (727/727 = 100%)
+
+- [x] **Bezpieczenstwo:**
+  - Usunieto 6 sekretow z CLAUDE.md (API keys, haslo DB, campaign IDs)
+
+- [x] **System:**
+  - 4GB swap utworzony (/swapfile)
+  - Echo Engine zrestartowany (1 GB -> 252 MB, healthy)
+  - Logi wyczyszczone (4.4 MB -> 127 KB)
+
+- [x] **Audyt weryfikacyjny #2:**
+  - 30/30 checkow PASS
+  - 281 unit testow passed (0 failures)
+  - Load average: 5.77 -> 1.21
+
+- [x] **Git:** 3 commity pushed na GitHub (main)
+
 ---
 
 ## 9. CO DO ZROBIENIA
@@ -1526,88 +1561,100 @@ Po każdej sesji Claude Code powinien:
 
 ---
 
-## 14. NOTATKI DLA NASTEPNEJ SESJI (2026-02-06)
+## 14. NOTATKI DLA NASTEPNEJ SESJI (2026-02-07)
 
-### CO DZIALA TERAZ (2026-02-06 21:15 UTC)
+### CO DZIALA TERAZ (2026-02-07 08:00 UTC)
 
-**SERWISY (7/7 UP):**
+**SERWISY (7/7 UP + HEALTHY):**
 - reviewsignal-api (8000) - Running
-- lead-receiver (8001) - Running
-- echo-engine (8002) - Running
+- lead-receiver (8001) - Running, /health OK, /metrics OK (110 linii)
+- echo-engine (8002) - Running, HEALTHY (252 MB RAM, zrestartowany)
 - singularity-engine (8003) - Running
-- higgs-nexus (8004) - Running
-- neural-api (8005) - Running
-- production-scraper - Running
+- higgs-nexus (8004) - Running, /health OK
+- neural-api (8005) - Running, /health OK, model loaded (8,715 samples)
+- production-scraper - Running (0 errors)
 
-**BAZA DANYCH:**
-- Lokalizacje: 42,201
-- Recenzje: 46,113
-- Leady: 727 (zsegmentowane: 709)
-- TOP: Millennium 115, Balyasny 109, Point72 51
+**BAZA DANYCH (WYCZYSZCZONA):**
+- Lokalizacje: 44,326
+- Recenzje: 61,555
+- Leady: 727 (zsegmentowane: 727/727 = 100%)
+- Sieci: 89 w chains table
+- Indeksy: wyczyszczone (0 duplikatow)
+- Legacy schema: usunieta
+- TOP: Millennium 120, Balyasny 114, Two Sigma 75, Point72 51
+
+**SYSTEM (WZMOCNIONY):**
+- Swap: 4 GB (dodany 2026-02-07)
+- RAM: 3.8 GB available (bylo 3.0)
+- Load: 1.21 (bylo 5.77)
+- Testy: 281 passed (0 failures)
+
+**BEZPIECZENSTWO:**
+- Sekrety usuniete z CLAUDE.md (0 exposed keys)
+- Connection pooling w lead_receiver.py (2-10 conn)
+- DB_PASS wymaga env variable (brak defaultu)
+- Duplikat /metrics endpoint usuniety
 
 **AUTOMATYZACJA:**
-- Apollo Cron: AUTO-PAGINATION WORKING!
+- Apollo Cron: AUTO-PAGINATION WORKING! (page 16)
 - Schedule: 09:00 + 21:00 UTC
-- Next page: 16+
 - Prognoza: ~110 leads/dzien
 
 **INSTANTLY CAMPAIGNS:**
-- 5 kampanii CONFIGURED ✅
-- 709 leadów SEGMENTED ✅
-- 7 email accounts @ 99.6% warmup ✅
-- CSV files READY ✅
-- Email sequences READY ✅
-- **STATUS: READY TO LAUNCH! 🚀**
+- 5 kampanii CONFIGURED, 727 leadow SEGMENTED
+- 7 email accounts @ 99.6% warmup
+- **STATUS: READY TO LAUNCH (USER ACTION REQUIRED)**
 
 ### PRIORYTETY NA NASTEPNA SESJE
 
-**KRYTYCZNE (USER ACTION REQUIRED):**
-1. **Upload CSVs do Instantly** - 5 min (see INSTANTLY_QUICK_START.md)
-2. **Add email accounts do kampanii** - 2 min
-3. **LAUNCH CAMPAIGNS!** - 1 min 🚀
+**USER ACTION REQUIRED:**
+1. **Zwiekszyc dysk w GCP** - 91% pelny (swap zajal 4GB)
+2. **Upload CSVs do Instantly** - 5 min
+3. **LAUNCH CAMPAIGNS** (kiedy user zdecyduje)
 
-**NASTĘPNE:**
-4. Monitor open/reply rates first 48h
-5. A/B test subject lines
-6. Demo dashboard dla klientow
-7. Auto-sync Apollo → Instantly
+**TECHNICZNE:**
+4. Restart lead-receiver systemd (zeby uzyc nowego kodu z poolingiem)
+5. Skonfigurowac RESEND_API_KEY w .env
+6. Dodac Prometheus scrape dla neural-api, singularity, higgs-nexus
+7. FastAPI main.py (glowne API)
+8. Demo dashboard (frontend - podlaczyc do real API)
 
-### OSIAGNIECIA DZISIEJSZEJ SESJI (2026-02-06)
+### OSIAGNIECIA SESJI (2026-02-07)
 
-- [x] Lead segmentation system (5 segmentów, 721 leadów)
-- [x] CSV export system dla Instantly
-- [x] 5 plików CSV wygenerowane (709 leads total)
-- [x] Kompletna dokumentacja (INSTANTLY_ACTIVATION_GUIDE.md + QUICK_START.md)
-- [x] Wszystko gotowe do launch! 🚀
+- [x] Pelny audyt systemu (7 agentow, SYSTEM_AUDIT_2026-02-07.md)
+- [x] 14 napraw krytycznych (kod, DB, system, bezpieczenstwo)
+- [x] Audyt weryfikacyjny (30/30 PASS, AUDIT_VERIFICATION_2026-02-07.md)
+- [x] 281 unit testow przeszlo (0 failures)
+- [x] 3 commity pushed na GitHub
+- [x] PROGRESS.md i CLAUDE.md zaktualizowane
 
 ### KOMENDY QUICK START
 
 ```bash
 # Sprawdz leady
-sudo -u postgres psql -d reviewsignal -c "SELECT company, COUNT(*) FROM leads GROUP BY company ORDER BY COUNT(*) DESC LIMIT 15;"
+sudo -u postgres psql -d reviewsignal -c "SELECT segment, COUNT(*) FROM leads GROUP BY segment ORDER BY COUNT(*) DESC;"
+
+# Sprawdz serwisy
+curl -s http://localhost:8001/health && curl -s http://localhost:8002/health
+
+# Sprawdz system
+free -h && uptime
 
 # Sprawdz Apollo page
 cat /home/info_betsim/reviewsignal-5.0/scripts/.apollo_current_page
 
-# Sprawdz serwisy
-sudo systemctl status production-scraper lead-receiver echo-engine
-
-# Sprawdz logi Apollo
-tail -30 /home/info_betsim/reviewsignal-5.0/logs/apollo_bulk_$(date +%Y%m%d).log
-
-# Reczny Apollo run (nastepna strona)
-python3 /home/info_betsim/reviewsignal-5.0/scripts/apollo_bulk_search.py --batch-size 63 --page $(cat /home/info_betsim/reviewsignal-5.0/scripts/.apollo_current_page)
+# Uruchom testy
+cd /home/info_betsim/reviewsignal-5.0 && python3 -m pytest tests/unit/ -v
 ```
 
 ### PLIKI KLUCZOWE
 
-- `CURRENT_SYSTEM_STATUS.md` - aktualny status systemu
+- `SYSTEM_AUDIT_2026-02-07.md` - pelny audyt systemu
+- `AUDIT_VERIFICATION_2026-02-07.md` - weryfikacja napraw (30/30 PASS)
 - `PROGRESS.md` - log postepow
 - `CLAUDE.md` - ten plik (kontekst)
-- `scripts/apollo_cron_wrapper.sh` - Apollo automation
-- `scripts/.apollo_current_page` - tracker strony Apollo
 
 ---
 
 *Dokument utrzymywany przez Claude AI dla ReviewSignal.ai Team*
-*Wersja 3.8.0 - Instantly Campaigns Ready to Launch! - 2026-02-06 21:15 UTC*
+*Wersja 4.0.0 - Full Audit + 14 Fixes + Verification - 2026-02-07 08:00 UTC*

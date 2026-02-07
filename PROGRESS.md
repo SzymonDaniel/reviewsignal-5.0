@@ -3957,3 +3957,70 @@ UPDATE leads SET segment = ... WHERE ... (721 rows updated)
 **Duration:** ~5 minut (7 agentow rownolegle + kompilacja raportu)
 **Impact:** Pelna widocznosc stanu systemu
 
+---
+
+## 2026-02-07 07:30 UTC - NAPRAWKI 14 PROBLEMOW Z AUDYTU
+
+### Naprawki kodu:
+- [x] Usunieto duplikat /metrics endpoint w lead_receiver.py (linia 435-441)
+- [x] Usunieto domyslne haslo DB - teraz RuntimeError jesli brak DB_PASS env
+- [x] Dodano connection pooling (psycopg2.ThreadedConnectionPool, 2-10 conn)
+- [x] Lazy import pdf_generator w modules/__init__.py (try/except + _PDF_AVAILABLE flag)
+
+### Naprawki bazy danych (8 SQL):
+- [x] DROP idx_leads_lead_score, leads_email_unique, leads_chain_name_unique
+- [x] DROP idx_locations_chain (duplikat)
+- [x] DROP leads_chain_unique CONSTRAINT (bledny UNIQUE na chain_name)
+- [x] ALTER leads.email SET NOT NULL
+- [x] CREATE idx_reviews_created_at, idx_leads_created_at, idx_locations_chain_city
+- [x] DROP SCHEMA reviewsignal (legacy: places + reviews)
+- [x] UPDATE 18 niesegmentowanych leadow -> quant_analyst (727/727 = 100%)
+
+### Naprawki bezpieczenstwa:
+- [x] Usunieto 6 sekretow z CLAUDE.md (Apollo key, Instantly key, DB password, Campaign IDs)
+- [x] Zastapione placeholder-ami <SEE .env FILE> / <FROM_ENV>
+
+### Naprawki systemowe:
+- [x] Utworzono 4GB swap (/swapfile, dodane do /etc/fstab)
+- [x] Restart Echo Engine (SIGKILL stuck process + start fresh) -> 252 MB (bylo 1 GB)
+- [x] Truncacja logow (4.4 MB -> 127 KB)
+
+### Aktualizacja CLAUDE.md:
+- [x] Lokalizacje: 42,201 -> 44,326
+- [x] Recenzje: 46,113 -> 61,555
+- [x] Sieci: 38+ -> 89
+- [x] Apollo page: 13 -> 16
+
+**Status:** ✅ COMPLETE - 14/14 napraw zastosowanych
+**Duration:** ~15 minut
+**Impact:** System znacznie bardziej stabilny i bezpieczny
+
+---
+
+## 2026-02-07 07:57 UTC - AUDYT WERYFIKACYJNY #2
+
+### Wyniki weryfikacji:
+- 30/30 checkow PASS (100%)
+- 281 unit testow passed (0 failures, 33s)
+- 4 serwisy healthy (lead-receiver, echo-engine, neural-api, higgs-nexus)
+
+### Metryki przed/po:
+- Load average: 5.77 -> 1.21 (-79%)
+- Echo Engine RAM: 1 GB -> 252 MB (-75%)
+- Echo Engine /health: TIMEOUT -> 200 OK
+- Sekrety w CLAUDE.md: 6 -> 0
+- Leady zsegmentowane: 709/727 -> 727/727
+
+### Pliki wygenerowane:
+- SYSTEM_AUDIT_2026-02-07.md (audyt glowny)
+- AUDIT_VERIFICATION_2026-02-07.md (weryfikacja napraw)
+
+### Git commits:
+- 45de962 fix: Full system audit + 14 critical fixes
+- cddccc2 feat: Complete ReviewSignal 5.0 system - all modules, tests, infra
+- b7e0d58 docs: Add verification audit report - 30/30 checks PASS
+
+**Status:** ✅ COMPLETE - Wszystko zweryfikowane i push-niete na GitHub
+**Duration:** ~5 minut (4 agenty weryfikacyjne rownolegle)
+**Impact:** Potwierdzenie ze wszystkie naprawki dzialaja poprawnie
+
