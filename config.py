@@ -24,7 +24,9 @@ DB_HOST = os.getenv('DB_HOST', 'localhost')
 DB_PORT = os.getenv('DB_PORT', '5432')
 DB_NAME = os.getenv('DB_NAME', 'reviewsignal')
 DB_USER = os.getenv('DB_USER', 'reviewsignal')
-DB_PASS = os.getenv('DB_PASS', 'reviewsignal2026')
+DB_PASS = os.getenv('DB_PASS')
+if not DB_PASS:
+    raise RuntimeError("DB_PASS environment variable must be set")
 
 DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 

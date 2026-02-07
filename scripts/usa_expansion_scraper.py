@@ -10,6 +10,9 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
+
 from modules.real_scraper import GoogleMapsRealScraper
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -24,13 +27,13 @@ logger = structlog.get_logger()
 # CONFIGURATION
 # ═══════════════════════════════════════════════════════════════
 
-GOOGLE_MAPS_API_KEY = "AIzaSyDZYIYVfDYVV8KMtQdbKJEnYufhwswI3Wk"
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
 DB_CONFIG = {
     "host": "localhost",
     "port": 5432,
     "database": "reviewsignal",
     "user": "reviewsignal",
-    "password": "reviewsignal2026"
+    "password": os.getenv("DB_PASS")
 }
 
 # Top 50 miast USA dla maksymalnego pokrycia

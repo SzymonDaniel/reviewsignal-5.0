@@ -8,6 +8,8 @@ import psycopg2
 import csv
 import os
 from datetime import datetime
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
 
 # Database config
 DB_CONFIG = {
@@ -15,7 +17,7 @@ DB_CONFIG = {
     'port': os.getenv('DB_PORT', '5432'),
     'database': os.getenv('DB_NAME', 'reviewsignal'),
     'user': os.getenv('DB_USER', 'reviewsignal'),
-    'password': os.getenv('DB_PASS', 'reviewsignal2026')
+    'password': os.getenv('DB_PASS')
 }
 
 SEGMENTS = {

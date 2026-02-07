@@ -15,29 +15,22 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import psycopg2
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
+
 from psycopg2.extras import RealDictCursor
+from modules.db import get_connection, return_connection
 from datetime import datetime
 import time
-import logging
+import structlog
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s %(levelname)s %(message)s',
-    handlers=[
-        logging.FileHandler('/var/log/reviewsignal/coverage_scraper.log'),
-        logging.StreamHandler()
+structlog.configure(
+    processors=[
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.dev.ConsoleRenderer(),
     ]
 )
-log = logging.getLogger(__name__)
-
-DB_CONFIG = {
-    "host": os.getenv("DB_HOST", "localhost"),
-    "port": os.getenv("DB_PORT", "5432"),
-    "dbname": os.getenv("DB_NAME", "reviewsignal"),
-    "user": os.getenv("DB_USER", "reviewsignal"),
-    "password": os.getenv("DB_PASS", "reviewsignal2026")
-}
+log = structlog.get_logger()
 
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
 
@@ -130,7 +123,7 @@ def main():
     from modules.real_scraper import GoogleMapsRealScraper
     scraper = GoogleMapsRealScraper(api_key=GOOGLE_MAPS_API_KEY)
 
-    conn = psycopg2.connect(**DB_CONFIG)
+    conn = get_connection()
 
     # Stats before
     total, with_reviews = get_coverage_stats(conn)
@@ -143,7 +136,7 @@ def main():
 
     if not locations:
         log.info("All locations covered! Nothing to do.")
-        conn.close()
+        return_connection(conn)
         return
 
     # Process
@@ -176,7 +169,7 @@ def main():
     log.info(f"Locations with new reviews: {locations_with_reviews}")
     log.info(f"Coverage: {coverage_before}% -> {coverage_after}% ({with_reviews_after}/{total_after})")
 
-    conn.close()
+    return_connection(conn)
 
 
 if __name__ == "__main__":

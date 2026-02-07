@@ -9,14 +9,14 @@ Run: uvicorn lead_receiver:app --host 0.0.0.0 --port 8001
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from pydantic import BaseModel, EmailStr
 from typing import Optional
-import psycopg2
 from psycopg2.extras import RealDictCursor
-from psycopg2 import pool
 import os
 import httpx
 from datetime import datetime
 import structlog
 import time
+
+from modules.db import get_connection, return_connection
 
 logger = structlog.get_logger()
 
@@ -24,7 +24,7 @@ app = FastAPI(title="ReviewSignal Lead Receiver", version="2.1")
 
 # Import metrics
 try:
-    from .metrics_helper import (
+    from api.metrics_helper import (
         metrics_endpoint,
         track_lead_collected, track_lead_processed, track_lead_failed,
         track_instantly_sync, set_database_connections, track_database_query
@@ -41,23 +41,6 @@ except ImportError:
     except ImportError:
         METRICS_ENABLED = False
         logger.warning("metrics_helper_not_available")
-
-# Database config - password MUST come from environment
-_db_pass = os.getenv("DB_PASS")
-if not _db_pass:
-    logger.error("DB_PASS environment variable is required")
-    raise RuntimeError("DB_PASS environment variable must be set")
-
-DB_CONFIG = {
-    "host": os.getenv("DB_HOST", "localhost"),
-    "port": os.getenv("DB_PORT", "5432"),
-    "dbname": os.getenv("DB_NAME", "reviewsignal"),
-    "user": os.getenv("DB_USER", "reviewsignal"),
-    "password": _db_pass
-}
-
-# Connection pool (min 2, max 10 connections)
-db_pool = pool.ThreadedConnectionPool(2, 10, **DB_CONFIG)
 
 # Instantly config (optional)
 INSTANTLY_API_KEY = os.getenv("INSTANTLY_API_KEY", "")
@@ -139,13 +122,13 @@ class LeadResponse(BaseModel):
 
 
 def get_db_connection():
-    """Get PostgreSQL connection from pool"""
-    return db_pool.getconn()
+    """Get PostgreSQL connection from shared pool."""
+    return get_connection()
 
 
-def return_db_connection(conn):
-    """Return connection to pool"""
-    db_pool.putconn(conn)
+def return_db_connection(conn) -> None:
+    """Return connection to shared pool."""
+    return_connection(conn)
 
 
 def save_lead_to_db(lead: LeadInput) -> Optional[int]:

@@ -20,12 +20,6 @@ Version: 5.1.0
 Date: February 2026
 """
 
-import sys
-from pathlib import Path
-
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -167,13 +161,22 @@ app = FastAPI(
     version="5.1.0"
 )
 
-# CORS
+# CORS - production whitelist
+ALLOWED_ORIGINS = [
+    "https://reviewsignal.ai",
+    "https://www.reviewsignal.ai",
+    "https://app.reviewsignal.ai",
+    "https://dashboard.reviewsignal.ai",
+    "http://localhost:3000",
+    "http://localhost:8000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-API-Key"],
 )
 
 # Neural Core instance (lazy loaded)

@@ -41,46 +41,45 @@ DATABASE_QUERY_DURATION = Histogram(
 )
 
 
-def metrics_endpoint():
-    """Generate Prometheus metrics endpoint"""
+def metrics_endpoint() -> PlainTextResponse:
+    """Generate Prometheus metrics endpoint."""
     return PlainTextResponse(
         content=generate_latest(),
         media_type=CONTENT_TYPE_LATEST
     )
 
 
-def track_request(method: str, endpoint: str, status: int, duration: float):
-    """Track HTTP request metrics"""
+def track_request(method: str, endpoint: str, status: int, duration: float) -> None:
+    """Track HTTP request metrics."""
     REQUEST_COUNT.labels(method=method, endpoint=endpoint, status=status).inc()
     REQUEST_DURATION.labels(method=method, endpoint=endpoint).observe(duration)
 
 
-def track_lead_collected(source: str = 'apollo'):
-    """Track lead collection"""
+def track_lead_collected(source: str = 'apollo') -> None:
+    """Track lead collection."""
     LEADS_COLLECTED.labels(source=source).inc()
 
 
-def track_lead_processed():
-    """Track successful lead processing"""
+def track_lead_processed() -> None:
+    """Track successful lead processing."""
     LEADS_PROCESSED.inc()
 
 
-def track_lead_failed():
-    """Track failed lead processing"""
+def track_lead_failed() -> None:
+    """Track failed lead processing."""
     LEADS_FAILED.inc()
 
 
-def track_instantly_sync(success: bool):
-    """Track Instantly sync"""
-    status = 'success' if success else 'failed'
+def track_instantly_sync(status: str) -> None:
+    """Track Instantly sync by status ('success' or 'error')."""
     INSTANTLY_SYNCS.labels(status=status).inc()
 
 
-def set_database_connections(count: int):
-    """Set active database connection count"""
+def set_database_connections(count: int) -> None:
+    """Set active database connection count."""
     DB_CONNECTIONS.set(count)
 
 
-def track_database_query(operation: str, duration: float):
-    """Track database query duration"""
+def track_database_query(operation: str, duration: float) -> None:
+    """Track database query duration."""
     DATABASE_QUERY_DURATION.labels(operation=operation).observe(duration)

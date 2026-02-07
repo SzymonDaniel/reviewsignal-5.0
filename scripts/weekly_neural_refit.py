@@ -19,6 +19,9 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
+
 import structlog
 
 # Configure logging
@@ -41,7 +44,7 @@ def load_training_data_from_db():
     try:
         from config import DATABASE_URL
     except ImportError:
-        DATABASE_URL = "postgresql://reviewsignal:reviewsignal2026@localhost:5432/reviewsignal"
+        DATABASE_URL = os.getenv('DATABASE_URL', f"postgresql://{os.getenv('DB_USER', 'reviewsignal')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}/{os.getenv('DB_NAME', 'reviewsignal')}")
 
     engine = create_engine(DATABASE_URL)
 
@@ -89,7 +92,7 @@ def update_location_stats():
     try:
         from config import DATABASE_URL
     except ImportError:
-        DATABASE_URL = "postgresql://reviewsignal:reviewsignal2026@localhost:5432/reviewsignal"
+        DATABASE_URL = os.getenv('DATABASE_URL', f"postgresql://{os.getenv('DB_USER', 'reviewsignal')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST', 'localhost')}:{os.getenv('DB_PORT', '5432')}/{os.getenv('DB_NAME', 'reviewsignal')}")
 
     engine = create_engine(DATABASE_URL)
     core = get_neural_core()

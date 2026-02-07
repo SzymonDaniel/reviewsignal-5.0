@@ -17,6 +17,7 @@ Business Applications:
 - Chaos Indicators: Risk assessment for investors
 """
 
+import os
 import numpy as np
 from scipy.sparse import csr_matrix, lil_matrix
 from scipy.sparse.linalg import spsolve
@@ -946,7 +947,8 @@ def create_echo_engine_from_db(
         engine = db_manager.engine
     else:
         # Default database URL
-        engine = create_engine('postgresql://reviewsignal:reviewsignal2026@localhost:5432/reviewsignal')
+        db_pass = os.getenv('DB_PASS')
+        engine = create_engine(f'postgresql://reviewsignal:{db_pass}@localhost:5432/reviewsignal')
 
     # Build SQL query for actual database schema
     sql = """

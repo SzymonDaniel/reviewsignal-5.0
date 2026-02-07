@@ -14,8 +14,11 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
+
 from modules.real_scraper import GoogleMapsRealScraper
-import psycopg2
+from modules.db import get_connection, return_connection
 from psycopg2.extras import RealDictCursor
 import structlog
 from typing import List, Dict
@@ -28,14 +31,7 @@ logger = structlog.get_logger()
 # CONFIGURATION
 # ═══════════════════════════════════════════════════════════════
 
-GOOGLE_MAPS_API_KEY = "AIzaSyDZYIYVfDYVV8KMtQdbKJEnYufhwswI3Wk"
-DB_CONFIG = {
-    "host": "localhost",
-    "port": 5432,
-    "database": "reviewsignal",
-    "user": "reviewsignal",
-    "password": "reviewsignal2026"
-}
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY", "")
 
 BATCH_SIZE = 100  # Process 100 locations at a time
 TARGET_COVERAGE = 0.80  # 80% locations with reviews
@@ -45,8 +41,8 @@ TARGET_COVERAGE = 0.80  # 80% locations with reviews
 # ═══════════════════════════════════════════════════════════════
 
 def get_db_connection():
-    """Get PostgreSQL connection"""
-    return psycopg2.connect(**DB_CONFIG, cursor_factory=RealDictCursor)
+    """Get PostgreSQL connection from shared pool."""
+    return get_connection()
 
 def get_locations_without_reviews(conn, limit: int = 1000):
     """Get locations that need review scraping - only valid Google Maps place_ids"""
@@ -274,7 +270,7 @@ def main():
 
         print(f"Progress: {total_processed:,}/{needed_count:,} | Reviews: {total_reviews_scraped:,} | Coverage: {current_coverage:.1f}%")
 
-    conn.close()
+    return_connection(conn)
 
     # FINAL REPORT
     duration = datetime.now() - start_time
@@ -287,7 +283,7 @@ def main():
 
         cur.execute("SELECT SUM(review_count) as total_reviews FROM locations")
         total_reviews_db = cur.fetchone()['total_reviews'] or 0
-    conn.close()
+    return_connection(conn)
 
     final_coverage = final_with_reviews / total_locations * 100
 

@@ -12,10 +12,6 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 import structlog
 import os
-import sys
-
-# Add project root to path
-sys.path.insert(0, '/home/info_betsim/reviewsignal-5.0')
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
@@ -765,15 +761,16 @@ async def download_export(
     """
     Download an exported data file.
     """
-    exports_dir = "/home/info_betsim/reviewsignal-5.0/exports"
-    file_path = os.path.join(exports_dir, filename)
+    # Validate filename BEFORE constructing path to prevent traversal
+    safe_name = os.path.basename(filename)
+    if safe_name != filename or ".." in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+
+    exports_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "exports")
+    file_path = os.path.join(exports_dir, safe_name)
 
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Export file not found")
-
-    # Validate filename to prevent path traversal
-    if ".." in filename or "/" in filename:
-        raise HTTPException(status_code=400, detail="Invalid filename")
 
     media_type = "application/json" if filename.endswith(".json") else "text/csv"
 

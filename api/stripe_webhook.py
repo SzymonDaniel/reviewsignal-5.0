@@ -14,31 +14,18 @@ Date: 2026-01-31
 from fastapi import FastAPI, HTTPException, Request, BackgroundTasks
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
-import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
-import sys
 from datetime import datetime
 import structlog
 import json
 
-# Add parent directory to path to import modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from modules.payment_processor import StripePaymentProcessor, WebhookEvent
+from modules.db import get_connection, return_connection
 
 logger = structlog.get_logger()
 
 app = FastAPI(title="ReviewSignal Stripe Webhook", version="1.0")
-
-# Database config
-DB_CONFIG = {
-    "host": os.getenv("DB_HOST", "localhost"),
-    "port": os.getenv("DB_PORT", "5432"),
-    "dbname": os.getenv("DB_NAME", "reviewsignal"),
-    "user": os.getenv("DB_USER", "reviewsignal"),
-    "password": os.getenv("DB_PASS", "reviewsignal2026")
-}
 
 # Stripe config
 STRIPE_API_KEY = os.getenv("STRIPE_API_KEY", "")
@@ -70,8 +57,8 @@ class WebhookEventLog(BaseModel):
 
 
 def get_db_connection():
-    """Get PostgreSQL connection"""
-    return psycopg2.connect(**DB_CONFIG)
+    """Get PostgreSQL connection from shared pool."""
+    return get_connection()
 
 
 def log_webhook_event(event_log: WebhookEventLog) -> bool:
@@ -130,7 +117,7 @@ def log_webhook_event(event_log: WebhookEventLog) -> bool:
         conn.rollback()
         return False
     finally:
-        conn.close()
+        return_connection(conn)
 
 
 def update_user_subscription(customer_id: str, subscription_data: Dict) -> bool:
@@ -199,7 +186,7 @@ def update_user_subscription(customer_id: str, subscription_data: Dict) -> bool:
         conn.rollback()
         return False
     finally:
-        conn.close()
+        return_connection(conn)
 
 
 def process_payment_success(payment_data: Dict) -> bool:
@@ -245,7 +232,7 @@ def process_payment_success(payment_data: Dict) -> bool:
         conn.rollback()
         return False
     finally:
-        conn.close()
+        return_connection(conn)
 
 
 @app.post("/webhook/stripe")
@@ -387,7 +374,7 @@ async def get_webhook_events(limit: int = 50, event_type: Optional[str] = None):
                 "count": len(events)
             }
     finally:
-        conn.close()
+        return_connection(conn)
 
 
 @app.get("/webhook/stats")
@@ -413,7 +400,7 @@ async def webhook_stats():
                 "total_events": sum(s['count'] for s in stats)
             }
     finally:
-        conn.close()
+        return_connection(conn)
 
 
 @app.get("/health")

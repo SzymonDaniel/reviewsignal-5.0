@@ -24,9 +24,6 @@ import structlog
 import time
 
 # Import Echo Engine and Database
-import sys
-sys.path.insert(0, '/home/info_betsim/reviewsignal-5.0')
-
 from modules.echo_engine import (
     EchoEngine,
     EchoEngineConfig,

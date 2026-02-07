@@ -3,6 +3,7 @@
 # REST API for accessing Singularity Engine capabilities
 # ═══════════════════════════════════════════════════════════════════════════════
 
+import os
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Any
 from fastapi import APIRouter, HTTPException, Query, BackgroundTasks, Depends
@@ -136,7 +137,7 @@ async def health_check():
             host="localhost",
             database="reviewsignal",
             user="reviewsignal",
-            password="reviewsignal2026",
+            password=os.getenv("DB_PASS"),
             connect_timeout=5
         )
         conn.close()

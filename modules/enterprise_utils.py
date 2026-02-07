@@ -366,7 +366,7 @@ class ConnectionPoolManager:
             'port': os.getenv('DB_PORT', '5432'),
             'database': os.getenv('DB_NAME', 'reviewsignal'),
             'user': os.getenv('DB_USER', 'reviewsignal'),
-            'password': os.getenv('DB_PASS', 'reviewsignal2026'),
+            'password': os.getenv('DB_PASS'),
         }
 
         # Create connection pool
@@ -557,7 +557,7 @@ def check_postgres() -> HealthStatus:
             port=os.getenv('DB_PORT', '5432'),
             database=os.getenv('DB_NAME', 'reviewsignal'),
             user=os.getenv('DB_USER', 'reviewsignal'),
-            password=os.getenv('DB_PASS', 'reviewsignal2026'),
+            password=os.getenv('DB_PASS'),
             connect_timeout=5
         )
         cursor = conn.cursor()

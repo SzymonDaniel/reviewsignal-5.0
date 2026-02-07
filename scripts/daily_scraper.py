@@ -16,19 +16,22 @@ import random
 from datetime import datetime
 
 # Add project root to path
-sys.path.insert(0, '/home/info_betsim/reviewsignal-5.0')
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
 
 from modules.real_scraper import GoogleMapsRealScraper
 
 # Configuration
-API_KEY = 'AIzaSyDZYIYVfDYVV8KMtQdbKJEnYufhwswI3Wk'
+API_KEY = os.getenv('GOOGLE_MAPS_API_KEY', '')
 
 DB_CONFIG = {
     'host': 'localhost',
     'port': 5432,
     'database': 'reviewsignal',
     'user': 'reviewsignal',
-    'password': 'reviewsignal2026'
+    'password': os.getenv('DB_PASS')
 }
 
 # City pool (rotate through these)

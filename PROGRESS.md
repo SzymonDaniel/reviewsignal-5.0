@@ -1,6 +1,44 @@
 # PROGRESS.md - Log postępu prac
 
-**Last Updated:** 2026-02-05 22:15 UTC
+**Last Updated:** 2026-02-07 10:00 UTC
+
+---
+
+## 2026-02-07 10:00 UTC - CODE QUALITY REFACTORING (6.6 -> 9/10)
+
+### Changes Made
+1. **Created `modules/db.py`** - Shared singleton ThreadedConnectionPool (2-20 connections)
+2. **Removed ALL `sys.path.insert` hacks from `api/`** - 6 files cleaned (echo_api, neural_api, main, nexus_server, gdpr_api, stripe_webhook)
+3. **Removed ALL hardcoded credentials from Python files** - 0 occurrences of `reviewsignal2026` remain in *.py
+4. **Removed hardcoded Google Maps API keys** - 2 files (usa_expansion_scraper, daily_scraper) now use env vars
+5. **Fixed CORS wildcard** in neural_api.py - replaced `allow_origins=["*"]` with production whitelist
+6. **Fixed path traversal** in gdpr_api.py - validate filename with `os.path.basename()` before path construction
+7. **Removed default DB password** from config.py - now raises RuntimeError if DB_PASS missing
+8. **Updated 6 files to use shared DB pool** - lead_receiver, stripe_webhook, production_scraper, mass_review_scraper, coverage_scraper + config.py
+9. **Fixed metrics_helper.py** - added type hints, fixed `track_instantly_sync` API mismatch
+10. **Removed hardcoded .env path** in nexus_server.py - uses relative Path
+
+### Files Modified (19 total)
+- `modules/db.py` (NEW)
+- `api/lead_receiver.py`, `api/stripe_webhook.py`, `api/echo_api.py`
+- `api/neural_api.py`, `api/main.py`, `api/nexus_server.py`, `api/gdpr_api.py`
+- `api/metrics_helper.py`
+- `config.py`
+- `production_scraper.py`
+- `scripts/mass_review_scraper.py`, `scripts/coverage_scraper.py`
+- `scripts/daily_scraper.py`, `scripts/usa_expansion_scraper.py`
+- `scripts/fix_missing_cities.py`, `scripts/segment_leads.py`, `scripts/export_leads_to_csv.py`
+- `scripts/weekly_neural_refit.py`, `scripts/monthly_report_generator.py`
+- `modules/enterprise_utils.py`, `modules/echo_engine.py`
+- `modules/singularity_engine/singularity_api.py`, `modules/singularity_engine/core.py`
+
+### Verification
+- 281 unit tests passed (0 failures, 32.85s)
+- 0 sys.path.insert in api/
+- 0 reviewsignal2026 in *.py
+- 0 CORS wildcards in api/
+- 0 hardcoded API keys in *.py
+- modules/db.py imports correctly
 
 ---
 

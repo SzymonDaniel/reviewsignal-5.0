@@ -15,7 +15,6 @@ Date: February 2026
 """
 
 import os
-import sys
 import time
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
@@ -26,9 +25,6 @@ from pydantic import BaseModel, Field
 import structlog
 import jwt
 from functools import lru_cache
-
-# Add project root to path
-sys.path.insert(0, '/home/info_betsim/reviewsignal-5.0')
 
 from config import DATABASE_URL, JWT_SECRET, PRICING_TIERS
 from modules.enterprise_utils import (

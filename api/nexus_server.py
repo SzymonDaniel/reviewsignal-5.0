@@ -7,14 +7,11 @@ Runs Higgs Nexus as independent service on port 8004.
 Orchestrates Echo Engine + Singularity Engine signals.
 """
 
-import sys
 import os
-
-# Add project root to path
-sys.path.insert(0, '/home/info_betsim/reviewsignal-5.0')
+from pathlib import Path
 
 from dotenv import load_dotenv
-load_dotenv('/home/info_betsim/reviewsignal-5.0/.env')
+load_dotenv(Path(__file__).parent.parent / '.env')
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

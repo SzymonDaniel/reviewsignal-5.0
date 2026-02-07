@@ -5,28 +5,18 @@ Runs 24/7, scrapes locations and reviews, saves to database
 """
 
 import asyncio
-import psycopg2
 from psycopg2.extras import RealDictCursor
 import time
-import logging
+import structlog
 from datetime import datetime
 from typing import List, Dict
-import sys
 import os
 
-# Add parent directory to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
 from modules.real_scraper import GoogleMapsRealScraper
-from config import GOOGLE_MAPS_API_KEY, REDIS_URL, CHAINS, ALL_CITIES, DATABASE_URL
+from modules.db import get_connection, return_connection
+from config import GOOGLE_MAPS_API_KEY, REDIS_URL, CHAINS, ALL_CITIES
 
-# Logging setup
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s | %(levelname)-7s | %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 class ProductionScraper:
@@ -40,7 +30,6 @@ class ProductionScraper:
             max_workers=5
         )
 
-        self.db_config = self._parse_db_url(DATABASE_URL)
         self.stats = {
             "locations_added": 0,
             "reviews_added": 0,
@@ -48,25 +37,13 @@ class ProductionScraper:
             "start_time": datetime.now()
         }
 
-    def _parse_db_url(self, url: str) -> Dict:
-        """Parse PostgreSQL URL"""
-        # postgresql://user:pass@host:port/dbname
-        parts = url.replace('postgresql://', '').split('@')
-        user_pass = parts[0].split(':')
-        host_port_db = parts[1].split('/')
-        host_port = host_port_db[0].split(':')
-
-        return {
-            'user': user_pass[0],
-            'password': user_pass[1],
-            'host': host_port[0],
-            'port': host_port[1] if len(host_port) > 1 else '5432',
-            'database': host_port_db[1]
-        }
-
     def get_db_connection(self):
-        """Get PostgreSQL connection"""
-        return psycopg2.connect(**self.db_config)
+        """Get PostgreSQL connection from shared pool."""
+        return get_connection()
+
+    def return_db_connection(self, conn) -> None:
+        """Return connection to shared pool."""
+        return_connection(conn)
 
     def save_location(self, place) -> bool:
         """Save location to database"""
@@ -130,7 +107,7 @@ class ProductionScraper:
 
             conn.commit()
             cur.close()
-            conn.close()
+            self.return_db_connection(conn)
             return True
 
         except Exception as e:
@@ -191,7 +168,7 @@ class ProductionScraper:
 
             conn.commit()
             cur.close()
-            conn.close()
+            self.return_db_connection(conn)
 
             if saved > 0:
                 self.stats["reviews_added"] += saved
@@ -255,14 +232,14 @@ class ProductionScraper:
                         if result:
                             location_id = result[0]
                             cur.close()
-                            conn.close()
+                            self.return_db_connection(conn)
 
                             # Save reviews if available
                             if reviews:
                                 self.save_reviews(place_id, location_id, reviews)
                         else:
                             cur.close()
-                            conn.close()
+                            self.return_db_connection(conn)
 
                 logger.info(f"   ✓ Completed: {chain} ({len(places)} locations)")
                 logger.info("")
@@ -289,7 +266,7 @@ class ProductionScraper:
             """)
             uncovered = cur.fetchall()
             cur.close()
-            conn.close()
+            self.return_db_connection(conn)
 
             backfill_count = 0
             for loc_id, place_id, loc_name in uncovered:

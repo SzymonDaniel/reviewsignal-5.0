@@ -686,7 +686,7 @@ def create_singularity_engine_from_db(
         db_port = os.getenv('DB_PORT', '5432')
         db_name = os.getenv('DB_NAME', 'reviewsignal')
         db_user = os.getenv('DB_USER', 'reviewsignal')
-        db_pass = os.getenv('DB_PASS', 'reviewsignal2026')
+        db_pass = os.getenv('DB_PASS')
 
         conn = psycopg2.connect(
             host=db_host,
