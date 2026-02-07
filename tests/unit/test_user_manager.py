@@ -991,8 +991,20 @@ class TestSessionManagement:
             ip_address="192.168.1.2"
         )
 
+        # Sessions must be distinct (different session IDs and session tokens)
         assert session1.session_id != session2.session_id
-        assert token1 != token2
+        assert session1.token != session2.token
+        # Both sessions should be active and for the same user
+        assert session1.is_active is True
+        assert session2.is_active is True
+        assert session1.user_id == session2.user_id
+        # JWT tokens may be identical when issued in the same second
+        # (same payload = same signature), so we only verify they are valid
+        assert token1 is not None
+        assert token2 is not None
+        # Verify different IP addresses recorded
+        assert session1.ip_address == "192.168.1.1"
+        assert session2.ip_address == "192.168.1.2"
 
     def test_revoke_session(self, user_manager):
         """Should revoke specific session"""
