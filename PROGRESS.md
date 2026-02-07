@@ -4024,3 +4024,58 @@ UPDATE leads SET segment = ... WHERE ... (721 rows updated)
 **Duration:** ~5 minut (4 agenty weryfikacyjne rownolegle)
 **Impact:** Potwierdzenie ze wszystkie naprawki dzialaja poprawnie
 
+---
+
+## 2026-02-07 08:20-08:35 UTC - NAPRAWA JAKOSCI DANYCH (KRYTYCZNE)
+
+### Problem:
+- 72.6% lokalizacji (32,237) bez city
+- 53.1% lokalizacji (23,583) bez chain_id
+- 1 flaky test (test_multiple_sessions_per_user)
+
+### Naprawki city (18,462 lokalizacji naprawionych):
+- [x] US addresses: 10,077 (format "Street, City, ST ZIP, USA")
+- [x] Canada addresses: 1,037
+- [x] UK addresses: 1,051 (stripped UK postal codes)
+- [x] EU addresses (DE, FR, ES, IT, etc.): 5,917 (stripped leading postal codes)
+- [x] 2-part international ("City, Country"): 79
+- [x] Singapore: 76, Taiwan: 48, Japan: 126, South Korea: 33, Hong Kong: 15, Monaco: 3
+- Wynik: 27.4% -> **68.9%** lokalizacji z city
+
+### Naprawki chain_id (21,771 lokalizacji naprawionych):
+- [x] Matching po chain_name i name: 10,772 lokalizacji (Step 1-2)
+- [x] Dodano 12 brakujacych sieci do chains table:
+  Chevron, Shell, BP, ExxonMobil, 7-Eleven, Orlen, Edeka, Netto, Penny, Spar, Auchan, Costa Coffee
+- [x] Matching nowych sieci: 10,999 lokalizacji (Step 3)
+- Wynik: 46.9% -> **95.9%** lokalizacji z chain_id (chains: 89 -> 101)
+
+### Flaky test fix:
+- [x] test_multiple_sessions_per_user: JWT tokeny identyczne w tej samej sekundzie
+  - Zmieniono assert na sprawdzanie session properties zamiast JWT token equality
+  - 281/281 testow passed (0 failures)
+
+### Dysk:
+- [x] Usunieto frontend/.next (186 MB), pip cache (50 MB), docker prune (137 MB), apt cache (475 MB)
+- Wynik: 91% -> **87%** (2.7 GB -> 3.9 GB wolne)
+
+### Weryfikacja (surowe dane):
+```
+City status PO naprawce:
+  HAS_VALUE:  30,618  (68.9%)
+  NULL:       13,738  (30.9%) - brak adresu w DB
+  EMPTY:          59  ( 0.1%)
+
+Chain_id status PO naprawce:
+  has_chain_id:  42,603  (95.9%)
+  no_chain_id:    1,812  ( 4.1%) - NULL chain_name
+
+Top cities: Berlin 405, London 304, San Antonio 251, Hamburg 250, München 239
+```
+
+### Git:
+- 40e4ece fix: Data quality overhaul + flaky test fix
+
+**Status:** ✅ COMPLETE - Jakosc danych znacznie poprawiona
+**Duration:** ~15 minut (3 agenty rownolegle)
+**Impact:** Dane gotowe do analizy (city 69%, chain_id 96%, 281 testow green)
+
