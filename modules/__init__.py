@@ -15,30 +15,37 @@ from .echo_engine import (
     SignalType,
     create_echo_engine_from_db,
 )
-from .pdf_generator import (
-    PDFReportGenerator,
-    ReportType,
-    OutputFormat,
-    ChartType,
-    ReportMetadata,
-    ChartData,
-    TableData,
-    SentimentReportData,
-    AnomalyAlertData,
-    generate_quick_sentiment_report,
-)
-from .pdf_generator_enterprise import (
-    EnterprisePDFGenerator,
-    BrandingConfig,
-    KPICard,
-    Recommendation,
-    BenchmarkData,
-    CompetitorData,
-    EnterpriseReportData,
-    SeverityLevel,
-    TrendDirection,
-    generate_sample_enterprise_report,
-)
+
+# PDF generators require reportlab - import lazily to avoid breaking
+# other modules when reportlab is not installed
+try:
+    from .pdf_generator import (
+        PDFReportGenerator,
+        ReportType,
+        OutputFormat,
+        ChartType,
+        ReportMetadata,
+        ChartData,
+        TableData,
+        SentimentReportData,
+        AnomalyAlertData,
+        generate_quick_sentiment_report,
+    )
+    from .pdf_generator_enterprise import (
+        EnterprisePDFGenerator,
+        BrandingConfig,
+        KPICard,
+        Recommendation,
+        BenchmarkData,
+        CompetitorData,
+        EnterpriseReportData,
+        SeverityLevel,
+        TrendDirection,
+        generate_sample_enterprise_report,
+    )
+    _PDF_AVAILABLE = True
+except ImportError:
+    _PDF_AVAILABLE = False
 
 __all__ = [
     # Core modules

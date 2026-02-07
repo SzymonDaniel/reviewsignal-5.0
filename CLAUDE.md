@@ -1,8 +1,8 @@
 # CLAUDE.md - BAZA KONTEKSTU REVIEWSIGNAL.AI
 
-**Ostatnia aktualizacja:** 2026-02-06 21:15 UTC
-**Wersja dokumentu:** 3.8.0
-**Sesja:** INSTANTLY CAMPAIGNS READY TO LAUNCH! 🚀 (727 leads, 5 kampanii)
+**Ostatnia aktualizacja:** 2026-02-07 07:30 UTC
+**Wersja dokumentu:** 3.9.0
+**Sesja:** POST-AUDIT FIXES (secrets removed, DB schema fixed, system hardened)
 
 ---
 
@@ -43,10 +43,10 @@ SYSTEM:           ReviewSignal.ai v5.1.0 (Neural Enhanced)
 STAN:             Development / Pre-revenue (INSTANTLY READY!)
 VALUACJA:         €500,000 - €700,000 (asset-based, 727 hedge fund leads!)
 CEL MRR:          €50,000
-LOKALIZACJE:      42,201
-RECENZJE:         46,113
-LEADY:            727 (zsegmentowane: 709)
-SIECI:            38+ (aktywne w Echo Engine)
+LOKALIZACJE:      44,326
+RECENZJE:         61,555
+LEADY:            727 (zsegmentowane: 727)
+SIECI:            89 (w chains table)
 SERWER:           35.246.214.156 (GCP)
 SERWISY:          7/7 UP (100%)
 INSTANTLY:        5 kampanii READY TO LAUNCH! 🚀
@@ -73,7 +73,7 @@ INSTANTLY:        5 kampanii READY TO LAUNCH! 🚀
 LANDING PAGE:     ✅ LIVE (https://reviewsignal.ai)
 EMAIL WARMUP:     ✅ 7/8 ACCOUNTS @ 99.6% HEALTH
 INSTANTLY:        ✅ READY TO LAUNCH!
-APOLLO CRON:      ✅ AUTO-PAGINATION FIXED! (page 13 next)
+APOLLO CRON:      ✅ AUTO-PAGINATION WORKING (page 16 next)
 NEURAL CORE:      ✅ LIVE (port 8005)
 ECHO ENGINE:      ✅ LIVE (port 8002)
 SINGULARITY:      ✅ LIVE (port 8003)
@@ -90,7 +90,7 @@ Schedule: 09:00 UTC + 21:00 UTC
 Per run: ~55-60 nowych leadow
 Daily: ~110 leadow
 Monthly: ~3,300 leadow
-Next page: 13
+Next page: 16
 ```
 
 ---
@@ -379,9 +379,9 @@ Environment="DB_HOST=localhost"
 Environment="DB_PORT=5432"
 Environment="DB_NAME=reviewsignal"
 Environment="DB_USER=reviewsignal"
-Environment="DB_PASS=reviewsignal2026"
-Environment="INSTANTLY_API_KEY=MDA1ZWRjY2EtZGZmYi00ZjBiLTgzODUtYzEzMjU0MGM0NDRkOnBWQ1hiTmhCeHF6Rg=="
-Environment="INSTANTLY_CAMPAIGN_ID=f30d31ff-46fe-4ae6-a602-597643a17a0c"
+Environment="DB_PASS=<FROM_ENV>"
+Environment="INSTANTLY_API_KEY=<FROM_ENV>"
+Environment="INSTANTLY_CAMPAIGN_ID=<FROM_ENV>"
 ```
 
 ---
@@ -502,7 +502,7 @@ Cache hit rate:    25.7% (improves with usage)
 
 **Plan:** Pro (€90/miesiąc)
 **Limit:** 4,000 leadów/miesiąc
-**API Key:** `koTQfXNe_OM599OsEpyEbA`
+**API Key:** `<SEE .env FILE>`
 
 **Filtry wyszukiwania:**
 ```json
@@ -526,8 +526,8 @@ Cache hit rate:    25.7% (improves with usage)
 ### 4.3 Konfiguracja Instantly
 
 **Plan:** Hyper Growth ($97/miesiąc)
-**API Key:** `MDA1ZWRjY2EtZGZmYi00ZjBiLTgzODUtYzEzMjU0MGM0NDRkOnBWQ1hiTmhCeHF6Rg==`
-**Campaign ID:** `f30d31ff-46fe-4ae6-a602-597643a17a0c`
+**API Key:** `<SEE .env FILE>`
+**Campaign ID:** `<SEE .env FILE>`
 **Campaign Name:** ReviewSignal - Hedge Funds
 **Schedule:** Mon-Fri, 09:00-18:00
 **Status:** ✅ GOTOWA DO AKTYWACJI (wszystkie emaile 99-100% health!)
@@ -1548,7 +1548,7 @@ Po każdej sesji Claude Code powinien:
 **AUTOMATYZACJA:**
 - Apollo Cron: AUTO-PAGINATION WORKING!
 - Schedule: 09:00 + 21:00 UTC
-- Next page: 13+
+- Next page: 16+
 - Prognoza: ~110 leads/dzien
 
 **INSTANTLY CAMPAIGNS:**

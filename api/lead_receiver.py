@@ -11,6 +11,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from psycopg2 import pool
 import os
 import httpx
 from datetime import datetime
@@ -19,7 +20,7 @@ import time
 
 logger = structlog.get_logger()
 
-app = FastAPI(title="ReviewSignal Lead Receiver", version="1.0")
+app = FastAPI(title="ReviewSignal Lead Receiver", version="2.1")
 
 # Import metrics
 try:
@@ -41,14 +42,22 @@ except ImportError:
         METRICS_ENABLED = False
         logger.warning("metrics_helper_not_available")
 
-# Database config
+# Database config - password MUST come from environment
+_db_pass = os.getenv("DB_PASS")
+if not _db_pass:
+    logger.error("DB_PASS environment variable is required")
+    raise RuntimeError("DB_PASS environment variable must be set")
+
 DB_CONFIG = {
     "host": os.getenv("DB_HOST", "localhost"),
     "port": os.getenv("DB_PORT", "5432"),
     "dbname": os.getenv("DB_NAME", "reviewsignal"),
     "user": os.getenv("DB_USER", "reviewsignal"),
-    "password": os.getenv("DB_PASS", "reviewsignal2026")
+    "password": _db_pass
 }
+
+# Connection pool (min 2, max 10 connections)
+db_pool = pool.ThreadedConnectionPool(2, 10, **DB_CONFIG)
 
 # Instantly config (optional)
 INSTANTLY_API_KEY = os.getenv("INSTANTLY_API_KEY", "")
@@ -65,13 +74,61 @@ class LeadInput(BaseModel):
     company_domain: Optional[str] = None
     industry: Optional[str] = None
     city: Optional[str] = None
+    state: Optional[str] = None
     country: Optional[str] = None
     linkedin_url: Optional[str] = None
     phone: Optional[str] = None
     lead_score: Optional[int] = 50
+    intent_score: Optional[int] = 0
+    intent_level: Optional[str] = "none"
     priority: Optional[str] = "medium"
     personalized_angle: Optional[str] = None
     company_size: Optional[str] = None
+    source: Optional[str] = "apollo"
+
+
+# Campaign mapping by segment
+CAMPAIGN_MAPPING = {
+    "portfolio_manager": os.getenv("INSTANTLY_CAMPAIGN_PM", ""),
+    "quant_analyst": os.getenv("INSTANTLY_CAMPAIGN_QUANT", ""),
+    "head_alt_data": os.getenv("INSTANTLY_CAMPAIGN_ALTDATA", ""),
+    "cio": os.getenv("INSTANTLY_CAMPAIGN_CIO", ""),
+    "high_intent": os.getenv("INSTANTLY_CAMPAIGN_INTENT", ""),
+    "default": os.getenv("INSTANTLY_CAMPAIGN_ID", "")
+}
+
+
+def determine_segment(title: str, intent_level: str = "none") -> str:
+    """
+    Determine lead segment based on title and intent.
+    Returns segment name for campaign routing.
+    """
+    if not title:
+        return "default"
+
+    title_lower = title.lower()
+
+    # High intent leads go to dedicated campaign
+    if intent_level in ["high", "medium"]:
+        return "high_intent"
+
+    # CIO / C-Level
+    if any(k in title_lower for k in ['chief investment officer', 'cio', 'managing director', 'partner']):
+        return "cio"
+
+    # Head of Alternative Data
+    if any(k in title_lower for k in ['alternative data', 'alt data', 'head of data']):
+        return "head_alt_data"
+
+    # Portfolio Manager
+    if any(k in title_lower for k in ['portfolio manager', 'pm']):
+        return "portfolio_manager"
+
+    # Quant Analyst
+    if any(k in title_lower for k in ['quant', 'quantitative', 'data scientist', 'researcher']):
+        return "quant_analyst"
+
+    return "default"
 
 
 class LeadResponse(BaseModel):
@@ -82,8 +139,13 @@ class LeadResponse(BaseModel):
 
 
 def get_db_connection():
-    """Get PostgreSQL connection"""
-    return psycopg2.connect(**DB_CONFIG)
+    """Get PostgreSQL connection from pool"""
+    return db_pool.getconn()
+
+
+def return_db_connection(conn):
+    """Return connection to pool"""
+    db_pool.putconn(conn)
 
 
 def save_lead_to_db(lead: LeadInput) -> Optional[int]:
@@ -135,17 +197,47 @@ def save_lead_to_db(lead: LeadInput) -> Optional[int]:
         conn.rollback()
         return None
     finally:
-        conn.close()
+        return_db_connection(conn)
 
 
-async def sync_to_instantly(lead: LeadInput) -> bool:
-    """Sync lead to Instantly campaign (API v2)"""
-    if not INSTANTLY_API_KEY or not INSTANTLY_CAMPAIGN_ID:
+async def sync_to_instantly(lead: LeadInput, segment: str = None) -> bool:
+    """
+    Sync lead to Instantly campaign (API v2).
+    Routes to appropriate campaign based on segment.
+    """
+    if not INSTANTLY_API_KEY:
         logger.warning("instantly_not_configured")
+        return False
+
+    # Determine segment if not provided
+    if not segment:
+        segment = determine_segment(lead.title, lead.intent_level or "none")
+
+    # Get campaign ID for segment
+    campaign_id = CAMPAIGN_MAPPING.get(segment) or CAMPAIGN_MAPPING.get("default")
+
+    if not campaign_id:
+        logger.warning("no_campaign_for_segment", segment=segment)
         return False
 
     try:
         async with httpx.AsyncClient() as client:
+            # Build custom variables based on segment
+            custom_vars = {
+                "title": lead.title or "",
+                "company_name": lead.company or "",
+                "city": lead.city or "",
+                "country": lead.country or "",
+                "linkedin": lead.linkedin_url or "",
+                "segment": segment,
+                "intent_level": lead.intent_level or "none",
+                "lead_score": str(lead.lead_score or 50)
+            }
+
+            # Add personalized angle if available
+            if lead.personalized_angle:
+                custom_vars["personalized_angle"] = lead.personalized_angle
+
             response = await client.post(
                 "https://api.instantly.ai/api/v2/leads",
                 headers={
@@ -153,27 +245,33 @@ async def sync_to_instantly(lead: LeadInput) -> bool:
                     "Content-Type": "application/json"
                 },
                 json={
-                    "campaign_id": INSTANTLY_CAMPAIGN_ID,
+                    "campaign_id": campaign_id,
                     "email": lead.email,
                     "first_name": lead.first_name,
                     "last_name": lead.last_name,
                     "company_name": lead.company or "",
-                    "personalization": lead.title or "",
-                    "custom_variables": {
-                        "title": lead.title or "",
-                        "city": lead.city or "",
-                        "country": lead.country or "",
-                        "linkedin": lead.linkedin_url or ""
-                    }
+                    "personalization": lead.personalized_angle or lead.title or "",
+                    "custom_variables": custom_vars
                 }
             )
             if response.status_code in [200, 201]:
-                logger.info("instantly_sync_success", email=lead.email, instantly_id=response.json().get("id"))
+                logger.info(
+                    "instantly_sync_success",
+                    email=lead.email,
+                    segment=segment,
+                    campaign_id=campaign_id,
+                    instantly_id=response.json().get("id")
+                )
                 if METRICS_ENABLED:
                     track_instantly_sync('success')
                 return True
             else:
-                logger.error("instantly_sync_error", status=response.status_code, response=response.text)
+                logger.error(
+                    "instantly_sync_error",
+                    status=response.status_code,
+                    response=response.text,
+                    segment=segment
+                )
                 if METRICS_ENABLED:
                     track_instantly_sync('error')
                 return False
@@ -186,8 +284,11 @@ async def sync_to_instantly(lead: LeadInput) -> bool:
 async def receive_lead(lead: LeadInput, background_tasks: BackgroundTasks):
     """
     Receive lead from n8n/Apollo and save to database.
-    Optionally syncs to Instantly in background.
+    Automatically segments lead and routes to appropriate Instantly campaign.
     """
+    # Determine segment for routing
+    segment = determine_segment(lead.title, lead.intent_level or "none")
+
     # Save to PostgreSQL
     lead_id = save_lead_to_db(lead)
 
@@ -198,21 +299,28 @@ async def receive_lead(lead: LeadInput, background_tasks: BackgroundTasks):
 
     # Track metrics
     if METRICS_ENABLED:
-        track_lead_collected('apollo')
+        track_lead_collected(lead.source or 'apollo')
         track_lead_processed()
 
     # Sync to Instantly in background (non-blocking)
     instantly_synced = False
-    if INSTANTLY_API_KEY and INSTANTLY_CAMPAIGN_ID:
-        background_tasks.add_task(sync_to_instantly, lead)
+    if INSTANTLY_API_KEY:
+        background_tasks.add_task(sync_to_instantly, lead, segment)
         instantly_synced = True  # Will be synced
 
-    logger.info("lead_received", email=lead.email, lead_id=lead_id)
+    logger.info(
+        "lead_received",
+        email=lead.email,
+        lead_id=lead_id,
+        segment=segment,
+        intent_level=lead.intent_level,
+        lead_score=lead.lead_score
+    )
 
     return LeadResponse(
         success=True,
         lead_id=lead_id,
-        message=f"Lead saved: {lead.first_name} {lead.last_name} ({lead.company})",
+        message=f"Lead saved: {lead.first_name} {lead.last_name} ({lead.company}) [Segment: {segment}]",
         instantly_synced=instantly_synced
     )
 
@@ -263,7 +371,7 @@ async def get_pending_leads(limit: int = 100):
 
             return result
     finally:
-        conn.close()
+        return_db_connection(conn)
 
 
 @app.get("/api/stats")
@@ -290,26 +398,47 @@ async def get_stats():
 
             return result
     finally:
-        conn.close()
+        return_db_connection(conn)
+
+
+@app.get("/api/segment-test")
+async def test_segmentation(title: str, intent_level: str = "none"):
+    """
+    Test lead segmentation logic.
+    Returns which campaign the lead would be routed to.
+    """
+    segment = determine_segment(title, intent_level)
+    campaign_id = CAMPAIGN_MAPPING.get(segment) or CAMPAIGN_MAPPING.get("default")
+
+    return {
+        "title": title,
+        "intent_level": intent_level,
+        "segment": segment,
+        "campaign_id": campaign_id or "not_configured",
+        "available_segments": list(CAMPAIGN_MAPPING.keys())
+    }
+
+
+@app.get("/api/campaigns")
+async def list_campaigns():
+    """List configured campaign mappings"""
+    return {
+        "campaigns": {
+            k: v if v else "NOT_CONFIGURED"
+            for k, v in CAMPAIGN_MAPPING.items()
+        },
+        "note": "Set campaign IDs via environment variables: INSTANTLY_CAMPAIGN_PM, INSTANTLY_CAMPAIGN_QUANT, etc."
+    }
 
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
-    return {"status": "ok", "service": "lead_receiver"}
+    return {"status": "ok", "service": "lead_receiver", "version": "2.0"}
 
 
 @app.get("/metrics")
 async def metrics():
-    """Prometheus metrics endpoint"""
-    if METRICS_ENABLED:
-        return metrics_endpoint()
-    else:
-        return {"error": "Metrics not enabled"}
-
-
-@app.get("/metrics")
-async def get_metrics():
     """Prometheus metrics endpoint"""
     if METRICS_ENABLED:
         return metrics_endpoint()
