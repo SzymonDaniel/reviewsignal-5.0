@@ -272,6 +272,41 @@ class ProductionScraper:
                 self.stats["errors"] += 1
                 continue
 
+        # === REVIEW BACKFILL PHASE ===
+        # Scrape reviews for existing locations that have none
+        logger.info("📥 Review backfill: fetching uncovered locations...")
+        try:
+            conn = self.get_db_connection()
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT l.id, l.place_id, l.name
+                FROM locations l
+                LEFT JOIN reviews r ON r.location_id = l.id
+                WHERE r.id IS NULL
+                AND l.place_id LIKE 'ChIJ%%'
+                ORDER BY CASE WHEN l.chain_id IS NOT NULL THEN 0 ELSE 1 END, l.id
+                LIMIT 50
+            """)
+            uncovered = cur.fetchall()
+            cur.close()
+            conn.close()
+
+            backfill_count = 0
+            for loc_id, place_id, loc_name in uncovered:
+                try:
+                    details = self.scraper.get_place_details(place_id)
+                    if details and details.reviews:
+                        self.save_reviews(place_id, loc_id, details.reviews)
+                        backfill_count += len(details.reviews)
+                    time.sleep(0.5)  # Rate limit
+                except Exception as e:
+                    logger.debug(f"Backfill error for {place_id}: {e}")
+
+            if backfill_count > 0:
+                logger.info(f"   📥 Backfill: {backfill_count} reviews for {len(uncovered)} locations")
+        except Exception as e:
+            logger.error(f"   Backfill error: {e}")
+
         # Print stats
         runtime = (datetime.now() - self.stats["start_time"]).total_seconds() / 60
         logger.info("="*70)

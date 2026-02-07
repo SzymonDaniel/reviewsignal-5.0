@@ -65,10 +65,10 @@ except ImportError as e:
 class AgentConfig:
     """Immutable agent configuration."""
 
-    # Model hierarchy (corrected model IDs - 2026-01-31)
-    PRIMARY_MODEL: str = "claude-sonnet-4-20250514"      # Sonnet 4 as primary (cost-effective)
-    FALLBACK_MODEL: str = "claude-sonnet-4-20250514"    # Same as primary for reliability
-    FAST_MODEL: str = "claude-3-haiku-20240307"          # Haiku 3 for quick tasks (stable)
+    # Model hierarchy (updated 2026-02-07)
+    PRIMARY_MODEL: str = "claude-sonnet-4-5-20250929"    # Sonnet 4.5 as primary (cost-effective)
+    FALLBACK_MODEL: str = "claude-sonnet-4-5-20250929"   # Same as primary for reliability
+    FAST_MODEL: str = "claude-haiku-4-5-20251001"        # Haiku 4.5 for quick tasks
     
     # API settings
     MAX_TOKENS: int = 4096  # Haiku limit is 4096, Sonnet 4 is 8192
@@ -243,9 +243,9 @@ class ClaudeClient:
     
     # Cost per 1M tokens (updated 2026-01-31)
     PRICING = {
-        "claude-sonnet-4-20250514": {"input": 3.0, "output": 15.0},
-        "claude-3-5-haiku-20241022": {"input": 0.80, "output": 4.0},
-        "claude-3-haiku-20240307": {"input": 0.25, "output": 1.25}
+        "claude-sonnet-4-5-20250929": {"input": 3.0, "output": 15.0},
+        "claude-haiku-4-5-20251001": {"input": 0.80, "output": 4.0},
+        "claude-3-haiku-20240307": {"input": 0.25, "output": 1.25},
     }
     
     def __init__(self, api_key: Optional[str] = None):
@@ -264,7 +264,8 @@ class ClaudeClient:
     
     def _calculate_cost(self, model: str, input_tokens: int, output_tokens: int) -> float:
         """Calculate cost for API call."""
-        pricing = self.PRICING.get(model, self.PRICING[CONFIG.FALLBACK_MODEL])
+        default_pricing = {"input": 3.0, "output": 15.0}
+        pricing = self.PRICING.get(model, default_pricing)
         input_cost = (input_tokens / 1_000_000) * pricing["input"]
         output_cost = (output_tokens / 1_000_000) * pricing["output"]
         return input_cost + output_cost
@@ -998,9 +999,68 @@ class AutonomousAgent:
                 )
     
     async def _handle_analyze(self, task: AgentTask) -> Dict[str, Any]:
-        """Handle analysis tasks."""
-        analysis = await self.improvement_engine.analyze_metrics(self.metrics)
-        return analysis
+        """Handle analysis tasks with real data quality checks."""
+        import subprocess
+
+        results = {'task_name': task.name, 'timestamp': datetime.utcnow().isoformat()}
+
+        try:
+            import psycopg2 as pg2
+
+            # Parse DB connection from DATABASE_URL or individual vars
+            db_url = os.environ.get("DATABASE_URL", "")
+            if db_url and "postgresql://" in db_url:
+                db_conf = {"dsn": db_url}
+            else:
+                db_conf = {
+                    "host": os.environ.get("DB_HOST", "localhost"),
+                    "port": os.environ.get("DB_PORT", "5432"),
+                    "dbname": os.environ.get("DB_NAME", "reviewsignal"),
+                    "user": os.environ.get("DB_USER", "reviewsignal"),
+                    "password": os.environ.get("DB_PASS", ""),
+                }
+
+            conn = pg2.connect(**db_conf)
+            cur = conn.cursor()
+
+            quality_queries = {
+                'null_city': "SELECT COUNT(*) FROM locations WHERE city IS NULL OR city = ''",
+                'null_chain_id': "SELECT COUNT(*) FROM locations WHERE chain_id IS NULL",
+                'null_lead_segment': "SELECT COUNT(*) FROM leads WHERE segment IS NULL",
+                'reviews_no_text': "SELECT COUNT(*) FROM reviews WHERE text IS NULL OR length(text) < 10",
+                'total_locations': "SELECT COUNT(*) FROM locations",
+                'total_reviews': "SELECT COUNT(*) FROM reviews",
+                'total_leads': "SELECT COUNT(*) FROM leads",
+                'avg_rating': "SELECT ROUND(AVG(rating)::numeric, 2) FROM reviews",
+            }
+
+            quality = {}
+            for key, query in quality_queries.items():
+                try:
+                    cur.execute(query)
+                    val = cur.fetchone()[0]
+                    quality[key] = float(val) if isinstance(val, (int, float)) else str(val)
+                except Exception as e:
+                    quality[key] = f"error: {e}"
+
+            results['data_quality'] = quality
+
+            total_loc = int(quality.get('total_locations', 0) or 0)
+            if total_loc > 0:
+                null_city = int(quality.get('null_city', 0) or 0)
+                null_chain = int(quality.get('null_chain_id', 0) or 0)
+                results['scores'] = {
+                    'city_completeness': round((total_loc - null_city) / total_loc * 100, 1),
+                    'chain_completeness': round((total_loc - null_chain) / total_loc * 100, 1),
+                }
+
+            cur.close()
+            conn.close()
+
+        except Exception as e:
+            results['error'] = str(e)
+
+        return results
     
     async def _handle_generate_code(self, task: AgentTask) -> Dict[str, Any]:
         """Handle code generation tasks."""
@@ -1031,18 +1091,96 @@ class AutonomousAgent:
         return result
     
     async def _handle_monitor(self, task: AgentTask) -> Dict[str, Any]:
-        """Handle monitoring tasks."""
-        return {
-            'metrics': {
+        """Handle monitoring tasks with real system checks."""
+        import subprocess
+
+        results = {
+            'task_name': task.name,
+            'timestamp': datetime.utcnow().isoformat(),
+            'agent_metrics': {
                 'tasks_completed': self.metrics.tasks_completed,
-                'tasks_failed': self.metrics.tasks_failed,
                 'success_rate': self.metrics.success_rate(),
                 'total_cost_usd': self.metrics.total_cost_usd,
-                'roi': self.metrics.roi()
-            },
-            'api_stats': self.claude.get_stats(),
-            'timestamp': datetime.utcnow().isoformat()
+            }
         }
+
+        try:
+            import psycopg2 as pg2
+
+            # Parse DB connection from DATABASE_URL or individual vars
+            db_url = os.environ.get("DATABASE_URL", "")
+            if db_url and "postgresql://" in db_url:
+                db_conf = {"dsn": db_url}
+            else:
+                db_conf = {
+                    "host": os.environ.get("DB_HOST", "localhost"),
+                    "port": os.environ.get("DB_PORT", "5432"),
+                    "dbname": os.environ.get("DB_NAME", "reviewsignal"),
+                    "user": os.environ.get("DB_USER", "reviewsignal"),
+                    "password": os.environ.get("DB_PASS", ""),
+                }
+
+            conn = pg2.connect(**db_conf)
+            cur = conn.cursor()
+
+            queries = {
+                'total_locations': "SELECT COUNT(*) FROM locations",
+                'locations_with_reviews': "SELECT COUNT(DISTINCT location_id) FROM reviews WHERE location_id IS NOT NULL",
+                'total_reviews': "SELECT COUNT(*) FROM reviews",
+                'reviews_last_24h': "SELECT COUNT(*) FROM reviews WHERE created_at > NOW() - INTERVAL '24 hours'",
+                'total_leads': "SELECT COUNT(*) FROM leads",
+                'leads_last_24h': "SELECT COUNT(*) FROM leads WHERE created_at > NOW() - INTERVAL '24 hours'",
+                'locations_with_city': "SELECT COUNT(*) FROM locations WHERE city IS NOT NULL AND length(city) > 0",
+                'locations_with_chain_id': "SELECT COUNT(*) FROM locations WHERE chain_id IS NOT NULL",
+            }
+
+            db_results = {}
+            for key, query in queries.items():
+                try:
+                    cur.execute(query)
+                    db_results[key] = cur.fetchone()[0]
+                except Exception as e:
+                    db_results[key] = f"error: {e}"
+
+            results['database'] = db_results
+
+            # Calculate coverage
+            total = db_results.get('total_locations', 0)
+            with_reviews = db_results.get('locations_with_reviews', 0)
+            if isinstance(total, int) and isinstance(with_reviews, int) and total > 0:
+                results['review_coverage_pct'] = round(with_reviews / total * 100, 1)
+
+            # Check services
+            services = {}
+            for port, name in [(8001, 'lead-receiver'), (8002, 'echo-engine'), (8005, 'neural-api')]:
+                try:
+                    import urllib.request
+                    url = f'http://localhost:{port}/health'
+                    r = urllib.request.urlopen(url, timeout=5)
+                    services[name] = 'healthy'
+                except Exception:
+                    services[name] = 'unhealthy'
+            results['services'] = services
+
+            # Log to brain_log table
+            try:
+                state = json.dumps(results.get('database', {}), default=str)
+                actions = json.dumps({'task': task.name, 'services': results.get('services', {})}, default=str)
+                cur.execute(
+                    "INSERT INTO brain_log (state, actions, confidence, timestamp) VALUES (%s::jsonb, %s::jsonb, %s, NOW())",
+                    (state, actions, 80)
+                )
+                conn.commit()
+            except Exception:
+                conn.rollback()
+
+            cur.close()
+            conn.close()
+
+        except Exception as e:
+            results['error'] = str(e)
+
+        return results
     
     async def _handle_optimize(self, task: AgentTask) -> Dict[str, Any]:
         """Handle optimization tasks."""
@@ -1221,24 +1359,38 @@ async def main():
     # Create and start agent
     agent = create_agent()
     
-    # Schedule some initial tasks
+    # Schedule practical business tasks
     agent.schedule_task(create_task(
-        name="System Health Check",
-        description="Monitor system health and performance",
+        name="Review Coverage Monitor",
+        description="Check DB for locations without reviews. Log coverage %. If below 80%, trigger coverage scraper.",
         action_type=ActionType.MONITOR,
         priority=TaskPriority.HIGH
     ))
-    
+
     agent.schedule_task(create_task(
-        name="Performance Analysis",
-        description="Analyze current metrics and find optimization opportunities",
+        name="Data Quality Check",
+        description="Check locations for NULL city/chain_id. Check leads completeness. Report data quality metrics.",
         action_type=ActionType.ANALYZE,
+        priority=TaskPriority.HIGH
+    ))
+
+    agent.schedule_task(create_task(
+        name="Scraper Health Check",
+        description="Verify production-scraper process is running. Check review count growth in last 24h.",
+        action_type=ActionType.MONITOR,
         priority=TaskPriority.MEDIUM
     ))
-    
+
     agent.schedule_task(create_task(
-        name="Daily Report",
-        description="Generate executive summary report",
+        name="Lead Pipeline Monitor",
+        description="Check Apollo cron last run. Verify new leads coming in. Check Instantly campaign status.",
+        action_type=ActionType.MONITOR,
+        priority=TaskPriority.MEDIUM
+    ))
+
+    agent.schedule_task(create_task(
+        name="Daily Executive Report",
+        description="Summarize: services health, data growth, review coverage, lead count, system resources.",
         action_type=ActionType.REPORT,
         priority=TaskPriority.LOW
     ))
