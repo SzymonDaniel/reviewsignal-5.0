@@ -25,3 +25,8 @@ ReviewSignal Team
 reviewsignal.ai
 
 P.S. - After the demo, you decide if it's worth continuing. No commitment required.
+
+---
+To unsubscribe, reply with 'UNSUBSCRIBE' or click: {{unsubscribe_link}}
+ReviewSignal.ai | Schillerstrasse 5, 10625 Berlin, Germany
+You received this because your profile on Apollo.io matched our target audience for alternative data insights.

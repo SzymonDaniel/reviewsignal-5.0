@@ -7,6 +7,8 @@ Handles sending transactional emails with PDF attachments:
 - Anomaly alerts
 - Invoices
 - Welcome emails
+- Trial ending warnings
+- Payment failed (dunning)
 - Password resets
 
 Supports multiple providers:
@@ -15,8 +17,8 @@ Supports multiple providers:
 - Postmark (€11/month for 10k emails)
 
 Author: ReviewSignal Team
-Version: 1.0
-Date: 2026-01-31
+Version: 2.0
+Date: 2026-02-07
 """
 
 import os
@@ -46,6 +48,7 @@ class EmailTemplate(Enum):
     WELCOME = "welcome"
     PASSWORD_RESET = "password_reset"
     TRIAL_ENDING = "trial_ending"
+    PAYMENT_FAILED = "payment_failed"
 
 
 @dataclass
@@ -290,6 +293,304 @@ class EmailSender:
             }
         except Exception as e:
             return {"success": False, "error": str(e)}
+
+
+    # ---------------------------------------------------------------
+    # SUBSCRIPTION LIFECYCLE EMAILS
+    # ---------------------------------------------------------------
+
+    def send_welcome_email(
+        self,
+        customer_email: str,
+        customer_name: str,
+        tier_name: str,
+        features: List[str]
+    ) -> Dict[str, Any]:
+        """
+        Send welcome email when a new subscription is created.
+
+        Args:
+            customer_email: Customer email address
+            customer_name: Customer name
+            tier_name: Subscription tier name (e.g., 'Starter', 'Pro', 'Enterprise')
+            features: List of features included in the tier
+
+        Returns:
+            Dict with send status
+        """
+        features_html = "".join(f"<li>{feature}</li>" for feature in features)
+
+        html_body = f"""<!DOCTYPE html>
+<html><head><style>
+body {{{{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}}}
+.container {{{{ max-width: 600px; margin: 0 auto; padding: 20px; }}}}
+.header {{{{ background-color: #2d3748; color: white; padding: 20px; text-align: center; }}}}
+.content {{{{ padding: 30px 20px; background-color: #f7fafc; }}}}
+.tier-badge {{{{ display: inline-block; padding: 8px 20px; background-color: #4299e1; color: white; border-radius: 20px; font-weight: bold; font-size: 14px; margin: 10px 0; }}}}
+.features-box {{{{ background-color: #ebf8ff; border-left: 4px solid #4299e1; padding: 15px; margin: 20px 0; }}}}
+.features-box ul {{{{ margin: 10px 0; padding-left: 20px; }}}}
+.quickstart {{{{ background-color: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 20px 0; }}}}
+.button {{{{ display: inline-block; padding: 12px 30px; background-color: #4299e1; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }}}}
+.footer {{{{ padding: 20px; text-align: center; font-size: 12px; color: #718096; }}}}
+</style></head><body><div class="container">
+<div class="header"><h1>Welcome to ReviewSignal</h1><p>Your alternative data journey starts now</p></div>
+<div class="content">
+<p>Dear {customer_name},</p>
+<p>Thank you for subscribing to ReviewSignal! We are excited to have you on board.</p>
+<p>Your subscription plan:</p><div class="tier-badge">{tier_name}</div>
+<div class="features-box"><strong>What's included in your plan:</strong><ul>{features_html}</ul></div>
+<div class="quickstart"><strong>Quick Start Guide:</strong><ol>
+<li>Access the API documentation at <a href="https://api.reviewsignal.ai/docs">api.reviewsignal.ai/docs</a></li>
+<li>Your API key will be sent in a separate secure email</li>
+<li>Check out sample reports in your dashboard</li>
+<li>Set up your first alert for sentiment changes</li></ol></div>
+<a href="https://api.reviewsignal.ai/dashboard" class="button">Go to Dashboard</a>
+<p>If you have any questions, our team is here to help:</p>
+<ul><li>Email: <a href="mailto:team@reviewsignal.ai">team@reviewsignal.ai</a></li>
+<li>Documentation: <a href="https://api.reviewsignal.ai/docs">api.reviewsignal.ai/docs</a></li></ul>
+<p>Best regards,<br>The ReviewSignal Team</p></div>
+<div class="footer"><p>&copy; 2026 ReviewSignal Analytics. All rights reserved.</p>
+<p><a href="https://reviewsignal.ai">reviewsignal.ai</a></p></div></div></body></html>"""
+
+        features_text = "\n".join(f"- {f}" for f in features)
+        text_body = (
+            f"Welcome to ReviewSignal!\n\nDear {customer_name},\n\n"
+            f"Thank you for subscribing!\nYour plan: {tier_name}\n\n"
+            f"What's included:\n{features_text}\n\n"
+            f"Quick Start: https://api.reviewsignal.ai/docs\n"
+            f"Dashboard: https://api.reviewsignal.ai/dashboard\n\n"
+            f"Need help? team@reviewsignal.ai\n\nBest regards,\nThe ReviewSignal Team\n"
+        )
+
+        message = EmailMessage(
+            to_email=customer_email, to_name=customer_name,
+            subject=f"Welcome to ReviewSignal - {tier_name} Plan",
+            html_body=html_body, text_body=text_body,
+            tags=["welcome", f"tier-{tier_name.lower()}"]
+        )
+        return self.send_email(message)
+
+    def send_trial_ending_email(
+        self,
+        customer_email: str,
+        customer_name: str,
+        days_remaining: int,
+        tier_recommendation: str
+    ) -> Dict[str, Any]:
+        """
+        Send trial ending warning email.
+
+        Args:
+            customer_email: Customer email address
+            customer_name: Customer name
+            days_remaining: Days remaining in trial
+            tier_recommendation: Recommended paid tier name
+
+        Returns:
+            Dict with send status
+        """
+        urgency_color = "#c53030" if days_remaining <= 1 else "#ed8936" if days_remaining <= 3 else "#4299e1"
+        urgency_text = "expires tomorrow" if days_remaining <= 1 else f"expires in {days_remaining} days"
+        days_label = "day" if days_remaining == 1 else "days"
+
+        html_body = f"""<!DOCTYPE html>
+<html><head><style>
+body {{{{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}}}
+.container {{{{ max-width: 600px; margin: 0 auto; padding: 20px; }}}}
+.header {{{{ background-color: {urgency_color}; color: white; padding: 20px; text-align: center; }}}}
+.content {{{{ padding: 30px 20px; background-color: #f7fafc; }}}}
+.countdown {{{{ text-align: center; font-size: 48px; font-weight: bold; color: {urgency_color}; margin: 20px 0; }}}}
+.countdown-label {{{{ text-align: center; font-size: 14px; color: #718096; margin-bottom: 20px; }}}}
+.lose-box {{{{ background-color: #fff5f5; border-left: 4px solid #f56565; padding: 15px; margin: 20px 0; }}}}
+.upgrade-box {{{{ background-color: #f0fff4; border-left: 4px solid #48bb78; padding: 15px; margin: 20px 0; }}}}
+.button {{{{ display: inline-block; padding: 14px 40px; background-color: {urgency_color}; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; font-size: 16px; }}}}
+.footer {{{{ padding: 20px; text-align: center; font-size: 12px; color: #718096; }}}}
+</style></head><body><div class="container">
+<div class="header"><h1>Your Trial {urgency_text.title()}</h1><p>Don't lose access to your data insights</p></div>
+<div class="content"><p>Dear {customer_name},</p>
+<div class="countdown">{days_remaining}</div>
+<div class="countdown-label">{days_label} remaining in your trial</div>
+<div class="lose-box"><strong>When your trial ends, you will lose access to:</strong><ul>
+<li>Real-time sentiment analysis across all locations</li>
+<li>Anomaly detection alerts</li><li>Monthly PDF reports</li>
+<li>API access for data integration</li><li>Historical data and trend analysis</li></ul></div>
+<div class="upgrade-box"><strong>Recommended for you: {tier_recommendation} Plan</strong>
+<p>Based on your trial usage, we recommend the {tier_recommendation} plan to continue getting actionable insights.</p></div>
+<p style="text-align: center;"><a href="https://api.reviewsignal.ai/dashboard/billing" class="button">Upgrade Now</a></p>
+<p>Questions? Contact us at <a href="mailto:team@reviewsignal.ai">team@reviewsignal.ai</a>.</p>
+<p>Best regards,<br>The ReviewSignal Team</p></div>
+<div class="footer"><p>&copy; 2026 ReviewSignal Analytics. All rights reserved.</p>
+<p><a href="https://reviewsignal.ai">reviewsignal.ai</a></p></div></div></body></html>"""
+
+        text_body = (
+            f"Your trial {urgency_text}\n\nDear {customer_name},\n\n"
+            f"You have {days_remaining} {days_label} remaining in your ReviewSignal trial.\n\n"
+            f"When your trial ends, you will lose access to:\n"
+            f"- Real-time sentiment analysis\n- Anomaly detection alerts\n"
+            f"- Monthly PDF reports\n- API access\n- Historical data\n\n"
+            f"Recommended: {tier_recommendation} Plan\n"
+            f"Upgrade: https://api.reviewsignal.ai/dashboard/billing\n\n"
+            f"Best regards,\nThe ReviewSignal Team\n"
+        )
+
+        subject_prefix = "URGENT: " if days_remaining <= 1 else ""
+        message = EmailMessage(
+            to_email=customer_email, to_name=customer_name,
+            subject=f"{subject_prefix}Your ReviewSignal trial {urgency_text}",
+            html_body=html_body, text_body=text_body,
+            tags=["trial-ending", f"days-{days_remaining}"]
+        )
+        return self.send_email(message)
+
+    def send_payment_failed_email(
+        self,
+        customer_email: str,
+        customer_name: str,
+        amount: float,
+        retry_date: str
+    ) -> Dict[str, Any]:
+        """
+        Send payment failed (dunning) email.
+
+        Args:
+            customer_email: Customer email address
+            customer_name: Customer name
+            amount: Failed payment amount in EUR
+            retry_date: Date of next payment retry
+
+        Returns:
+            Dict with send status
+        """
+        html_body = f"""<!DOCTYPE html>
+<html><head><style>
+body {{{{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}}}
+.container {{{{ max-width: 600px; margin: 0 auto; padding: 20px; }}}}
+.header {{{{ background-color: #f56565; color: white; padding: 20px; text-align: center; }}}}
+.content {{{{ padding: 30px 20px; background-color: #f7fafc; }}}}
+.alert-box {{{{ background-color: #fff5f5; border: 2px solid #f56565; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center; }}}}
+.amount {{{{ font-size: 32px; font-weight: bold; color: #c53030; }}}}
+.retry-info {{{{ background-color: #fffff0; border-left: 4px solid #ed8936; padding: 15px; margin: 20px 0; }}}}
+.warning {{{{ background-color: #fff5f5; border-left: 4px solid #f56565; padding: 15px; margin: 20px 0; }}}}
+.button {{{{ display: inline-block; padding: 14px 40px; background-color: #4299e1; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; }}}}
+.footer {{{{ padding: 20px; text-align: center; font-size: 12px; color: #718096; }}}}
+</style></head><body><div class="container">
+<div class="header"><h1>Payment Failed</h1><p>Action required to maintain your service</p></div>
+<div class="content"><p>Dear {customer_name},</p>
+<p>We were unable to process your latest payment for ReviewSignal.</p>
+<div class="alert-box"><p>Failed payment amount:</p><p class="amount">&euro;{amount:,.2f}</p></div>
+<div class="retry-info"><strong>Next retry date: {retry_date}</strong>
+<p>We will automatically retry the payment. Please ensure your payment method is up to date.</p></div>
+<p style="text-align: center;"><a href="https://api.reviewsignal.ai/dashboard/billing" class="button">Update Payment Method</a></p>
+<div class="warning"><strong>Important:</strong> If payment fails after multiple retries, your subscription will be suspended and you will lose access to:<ul>
+<li>API access and data feeds</li><li>Sentiment analysis reports</li>
+<li>Anomaly detection alerts</li><li>Dashboard and historical data</li></ul></div>
+<p>Questions? Contact <a href="mailto:team@reviewsignal.ai">team@reviewsignal.ai</a>.</p>
+<p>Best regards,<br>The ReviewSignal Team</p></div>
+<div class="footer"><p>&copy; 2026 ReviewSignal Analytics.</p>
+<p><a href="https://reviewsignal.ai">reviewsignal.ai</a></p></div></div></body></html>"""
+
+        text_body = (
+            f"Payment Failed\n\nDear {customer_name},\n\n"
+            f"Failed amount: EUR {amount:,.2f}\nNext retry: {retry_date}\n\n"
+            f"Update payment: https://api.reviewsignal.ai/dashboard/billing\n\n"
+            f"Best regards,\nThe ReviewSignal Team\n"
+        )
+
+        message = EmailMessage(
+            to_email=customer_email, to_name=customer_name,
+            subject="Payment Failed - Update your payment method for ReviewSignal",
+            html_body=html_body, text_body=text_body,
+            tags=["payment-failed", "dunning"]
+        )
+        return self.send_email(message)
+
+    def send_invoice_email(
+        self,
+        customer_email: str,
+        customer_name: str,
+        invoice_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Send invoice receipt email.
+
+        Args:
+            customer_email: Customer email address
+            customer_name: Customer name
+            invoice_data: Dict with keys: invoice_number, date, amount, currency,
+                         tier, period, payment_method, invoice_pdf_url
+
+        Returns:
+            Dict with send status
+        """
+        invoice_number = invoice_data.get('invoice_number', 'N/A')
+        invoice_date = invoice_data.get('date', datetime.now().strftime('%Y-%m-%d'))
+        amount = invoice_data.get('amount', 0)
+        currency = invoice_data.get('currency', 'EUR').upper()
+        tier = invoice_data.get('tier', 'Pro')
+        period = invoice_data.get('period', 'Monthly')
+        payment_method = invoice_data.get('payment_method', 'Card ending in ****')
+        invoice_pdf_url = invoice_data.get('invoice_pdf_url', '')
+
+        download_link = ""
+        if invoice_pdf_url:
+            download_link = f'<p style="text-align: center;"><a href="{invoice_pdf_url}" class="button">Download Invoice PDF</a></p>'
+
+        html_body = f"""<!DOCTYPE html>
+<html><head><style>
+body {{{{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}}}
+.container {{{{ max-width: 600px; margin: 0 auto; padding: 20px; }}}}
+.header {{{{ background-color: #2d3748; color: white; padding: 20px; text-align: center; }}}}
+.content {{{{ padding: 30px 20px; background-color: #f7fafc; }}}}
+.invoice-box {{{{ background-color: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 25px; margin: 20px 0; }}}}
+.paid-badge {{{{ display: inline-block; padding: 6px 16px; background-color: #48bb78; color: white; border-radius: 20px; font-weight: bold; font-size: 12px; }}}}
+.button {{{{ display: inline-block; padding: 12px 30px; background-color: #4299e1; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }}}}
+.footer {{{{ padding: 20px; text-align: center; font-size: 12px; color: #718096; }}}}
+table.invoice-table {{{{ width: 100%; border-collapse: collapse; }}}}
+table.invoice-table td {{{{ padding: 8px 0; }}}}
+table.invoice-table td.label {{{{ color: #718096; }}}}
+table.invoice-table td.value {{{{ text-align: right; font-weight: bold; }}}}
+table.invoice-table tr.total td {{{{ border-top: 2px solid #2d3748; padding-top: 12px; font-size: 18px; }}}}
+</style></head><body><div class="container">
+<div class="header"><h1>Payment Receipt</h1><p>Invoice #{invoice_number}</p></div>
+<div class="content"><p>Dear {customer_name},</p>
+<p>Thank you for your payment. Here is your invoice receipt.</p>
+<div class="invoice-box"><table class="invoice-table">
+<tr><td class="label">Invoice Number</td><td class="value">#{invoice_number}</td></tr>
+<tr><td class="label">Date</td><td class="value">{invoice_date}</td></tr>
+<tr><td class="label">Subscription</td><td class="value">ReviewSignal {tier} Plan</td></tr>
+<tr><td class="label">Billing Period</td><td class="value">{period}</td></tr>
+<tr><td class="label">Payment Method</td><td class="value">{payment_method}</td></tr>
+<tr><td class="label">Status</td><td class="value"><span class="paid-badge">PAID</span></td></tr>
+<tr class="total"><td class="label">Total</td><td class="value">{currency} {amount:,.2f}</td></tr>
+</table></div>{download_link}
+<p>View invoices: <a href="https://api.reviewsignal.ai/dashboard/billing">billing dashboard</a>.</p>
+<p>Questions? <a href="mailto:team@reviewsignal.ai">team@reviewsignal.ai</a>.</p>
+<p>Best regards,<br>The ReviewSignal Team</p></div>
+<div class="footer"><p>&copy; 2026 ReviewSignal Analytics.</p>
+<p><a href="https://reviewsignal.ai">reviewsignal.ai</a></p></div></div></body></html>"""
+
+        pdf_line = f"Download: {invoice_pdf_url}\n" if invoice_pdf_url else ""
+        text_body = (
+            f"Payment Receipt - Invoice #{invoice_number}\n\nDear {customer_name},\n\n"
+            f"Invoice: #{invoice_number}\nDate: {invoice_date}\n"
+            f"Subscription: ReviewSignal {tier} Plan\nPeriod: {period}\n"
+            f"Payment: {payment_method}\nTotal: {currency} {amount:,.2f}\n\n"
+            f"{pdf_line}"
+            f"View invoices: https://api.reviewsignal.ai/dashboard/billing\n\n"
+            f"Best regards,\nThe ReviewSignal Team\n"
+        )
+
+        message = EmailMessage(
+            to_email=customer_email, to_name=customer_name,
+            subject=f"Payment Receipt - Invoice #{invoice_number} ({currency} {amount:,.2f})",
+            html_body=html_body, text_body=text_body,
+            tags=["invoice", f"invoice-{invoice_number}"]
+        )
+        return self.send_email(message)
+
+    # ---------------------------------------------------------------
+    # EXISTING REPORT & ALERT EMAILS
+    # ---------------------------------------------------------------
 
     def send_monthly_report(
         self,

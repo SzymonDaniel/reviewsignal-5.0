@@ -28,3 +28,8 @@ I can set up a 15-min demo this week.
 Best,
 ReviewSignal Team
 reviewsignal.ai
+
+---
+To unsubscribe, reply with 'UNSUBSCRIBE' or click: {{unsubscribe_link}}
+ReviewSignal.ai | Schillerstrasse 5, 10625 Berlin, Germany
+You received this because your profile on Apollo.io matched our target audience for alternative data insights.

@@ -8,6 +8,7 @@ Version: 5.0.4
 Date: January 2026
 """
 
+import os
 import stripe
 from typing import List, Dict, Optional
 from dataclasses import dataclass, asdict, field
@@ -159,7 +160,7 @@ class StripePaymentProcessor:
         ),
         SubscriptionTier.STARTER: PricingTier(
             name="Starter",
-            price_id="price_1Sw5V3GMD6tutrJ2ltkgycJ6",
+            price_id=os.getenv("STRIPE_PRICE_STARTER", "price_1Sw5V3GMD6tutrJ2ltkgycJ6"),
             amount_cents=250000,  # €2,500
             currency="eur",
             interval="month",
@@ -176,7 +177,7 @@ class StripePaymentProcessor:
         ),
         SubscriptionTier.PRO: PricingTier(
             name="Pro",
-            price_id="price_1Sw5WFGMD6tutrJ2UpJzwGLb",
+            price_id=os.getenv("STRIPE_PRICE_PRO", "price_1Sw5WFGMD6tutrJ2UpJzwGLb"),
             amount_cents=500000,  # €5,000
             currency="eur",
             interval="month",
@@ -195,7 +196,7 @@ class StripePaymentProcessor:
         ),
         SubscriptionTier.ENTERPRISE: PricingTier(
             name="Enterprise",
-            price_id="price_1Sw5WqGMD6tutrJ2VMdKw9UZ",
+            price_id=os.getenv("STRIPE_PRICE_ENTERPRISE", "price_1Sw5WqGMD6tutrJ2VMdKw9UZ"),
             amount_cents=1000000,  # €10,000
             currency="eur",
             interval="month",
@@ -699,12 +700,9 @@ class StripePaymentProcessor:
         Returns:
             Dict with event type and processed data
         """
-        # Verify signature
-        if not self._verify_webhook_signature(payload, signature):
-            logger.warning("webhook_invalid_signature")
-            return {"error": "Invalid signature"}
-        
         try:
+            # construct_event verifies the signature internally;
+            # no need for a separate _verify_webhook_signature call.
             event = stripe.Webhook.construct_event(
                 payload,
                 signature,
@@ -719,20 +717,6 @@ class StripePaymentProcessor:
         except stripe.error.SignatureVerificationError as e:
             logger.error("webhook_signature_error", error=str(e))
             return {"error": "Invalid signature"}
-    
-    def _verify_webhook_signature(self, payload: bytes, signature: str) -> bool:
-        """
-        Verify webhook signature.
-        """
-        try:
-            stripe.Webhook.construct_event(
-                payload,
-                signature,
-                self.webhook_secret
-            )
-            return True
-        except Exception:
-            return False
     
     def _process_webhook_event(self, event) -> Dict:
         """
@@ -768,7 +752,8 @@ class StripePaymentProcessor:
             result["data"] = {
                 "subscription_id": data["id"],
                 "customer": data["customer"],
-                "status": data["status"]
+                "status": data["status"],
+                "price_id": data.get("items", {}).get("data", [{}])[0].get("price", {}).get("id", "")
             }
             
         elif event_type == WebhookEvent.SUBSCRIPTION_CANCELLED.value:
@@ -868,6 +853,22 @@ class StripePaymentProcessor:
             tier.value: pricing.to_dict()
             for tier, pricing in self.PRICING_TIERS.items()
         }
+    
+    @classmethod
+    def get_tier_by_price_id(cls, price_id: str):
+        """
+        Look up the SubscriptionTier for a given Stripe price_id.
+        
+        Args:
+            price_id: Stripe price ID (e.g. "price_1Sw5V3GMD6tutrJ2ltkgycJ6")
+        
+        Returns:
+            SubscriptionTier or None if no match found
+        """
+        for tier, pricing in cls.PRICING_TIERS.items():
+            if pricing.price_id == price_id:
+                return tier
+        return None
     
     def create_checkout_session(
         self,

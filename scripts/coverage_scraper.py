@@ -20,6 +20,7 @@ load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file_
 
 from psycopg2.extras import RealDictCursor
 from modules.db import get_connection, return_connection
+from modules.data_validator import ReviewValidator
 from datetime import datetime
 import time
 import structlog
@@ -74,12 +75,24 @@ def scrape_and_save(conn, scraper, location):
             return 0
 
         saved = 0
+        skipped_validation = 0
         with conn.cursor() as cur:
             for review in details.reviews:
                 try:
+                    # --- REVIEW VALIDATION GATE ---
+                    rev_dict = {
+                        "text": review.get('text', ''),
+                        "rating": review.get('rating', 0),
+                        "author_name": review.get('author_name', 'Anonymous'),
+                    }
+                    rev_valid, rev_issues = ReviewValidator.validate(rev_dict)
+                    if not rev_valid:
+                        skipped_validation += 1
+                        continue
+
                     cur.execute("""
-                        INSERT INTO reviews (location_id, author_name, rating, text, time_posted, language, source)
-                        VALUES (%s, %s, %s, %s, to_timestamp(%s), %s, 'google_maps')
+                        INSERT INTO reviews (location_id, author_name, rating, text, time_posted, language, source, sentiment_score)
+                        VALUES (%s, %s, %s, %s, to_timestamp(%s), %s, 'google_maps', %s)
                         ON CONFLICT DO NOTHING
                     """, (
                         loc_id,
@@ -88,14 +101,18 @@ def scrape_and_save(conn, scraper, location):
                         review.get('text', ''),
                         review.get('time', 0),
                         review.get('language', 'en'),
+                        rev_dict.get('sentiment_score'),
                     ))
                     if cur.rowcount > 0:
                         saved += 1
                 except Exception:
                     continue
+        if skipped_validation > 0:
+            log.debug("reviews_validation_skipped", location_id=loc_id, count=skipped_validation)
 
-            # Update location review_count
-            cur.execute("""
+        # Update location review_count
+        with conn.cursor() as cur2:
+            cur2.execute("""
                 UPDATE locations SET review_count = (
                     SELECT COUNT(*) FROM reviews WHERE location_id = %s
                 ) WHERE id = %s

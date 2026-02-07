@@ -17,6 +17,7 @@ import structlog
 import time
 
 from modules.db import get_connection, return_connection
+from modules.data_validator import LeadValidator
 
 logger = structlog.get_logger()
 
@@ -123,6 +124,23 @@ def return_db_connection(conn) -> None:
     return_connection(conn)
 
 
+def check_opted_out(email: str) -> bool:
+    """Check if a lead has opted out. Returns True if opted out."""
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT opted_out FROM leads WHERE email = %s",
+                (email,)
+            )
+            row = cur.fetchone()
+            if row and row[0]:
+                return True
+            return False
+    finally:
+        return_db_connection(conn)
+
+
 def save_lead_to_db(lead: LeadInput) -> Optional[int]:
     """Save lead to PostgreSQL, returns lead ID"""
     start_time = time.time()
@@ -179,9 +197,15 @@ async def sync_to_instantly(lead: LeadInput, segment: str = None) -> bool:
     """
     Sync lead to Instantly campaign (API v2).
     Routes to appropriate campaign based on segment.
+    Skips leads that have opted out.
     """
     if not INSTANTLY_API_KEY:
         logger.warning("instantly_not_configured")
+        return False
+
+    # Check if lead has opted out before syncing
+    if check_opted_out(lead.email):
+        logger.info("instantly_sync_skipped_opted_out", email=lead.email)
         return False
 
     # Determine segment if not provided
@@ -261,6 +285,22 @@ async def receive_lead(lead: LeadInput, background_tasks: BackgroundTasks):
     Receive lead from n8n/Apollo and save to database.
     Automatically segments lead and routes to appropriate Instantly campaign.
     """
+    # --- VALIDATION GATE ---
+    lead_dict = {
+        "email": lead.email,
+        "first_name": lead.first_name,
+        "last_name": lead.last_name,
+        "name": f"{lead.first_name} {lead.last_name}",
+        "company": lead.company,
+        "title": lead.title,
+    }
+    valid, issues = LeadValidator.validate(lead_dict)
+    if not valid:
+        logger.warning("lead_validation_rejected", email=lead.email, issues=issues)
+        if METRICS_ENABLED:
+            track_lead_failed()
+        raise HTTPException(status_code=422, detail=f"Lead validation failed: {'; '.join(issues)}")
+
     # Determine segment for routing
     segment = determine_segment(lead.title, lead.intent_level or "none")
 
@@ -305,8 +345,24 @@ async def receive_leads_bulk(leads: list[LeadInput], background_tasks: Backgroun
     """Receive multiple leads at once"""
     saved = 0
     failed = 0
+    rejected = 0
 
     for lead in leads:
+        # --- VALIDATION GATE ---
+        lead_dict = {
+            "email": lead.email,
+            "first_name": lead.first_name,
+            "last_name": lead.last_name,
+            "name": f"{lead.first_name} {lead.last_name}",
+            "company": lead.company,
+            "title": lead.title,
+        }
+        valid, issues = LeadValidator.validate(lead_dict)
+        if not valid:
+            logger.warning("bulk_lead_validation_rejected", email=lead.email, issues=issues)
+            rejected += 1
+            continue
+
         lead_id = save_lead_to_db(lead)
         if lead_id:
             saved += 1
@@ -319,6 +375,7 @@ async def receive_leads_bulk(leads: list[LeadInput], background_tasks: Backgroun
         "success": True,
         "saved": saved,
         "failed": failed,
+        "rejected_validation": rejected,
         "total": len(leads)
     }
 
@@ -406,10 +463,63 @@ async def list_campaigns():
     }
 
 
+class OptOutRequest(BaseModel):
+    """Request to opt-out a lead"""
+    email: EmailStr
+
+
+class OptOutResponse(BaseModel):
+    """Response for opt-out request"""
+    success: bool
+    email: str
+    message: str
+
+
+@app.post("/api/leads/opt-out", response_model=OptOutResponse)
+async def opt_out_lead(body: OptOutRequest):
+    """
+    Mark a lead as opted out. Opted-out leads will not be synced to Instantly
+    and will be excluded from all future email campaigns.
+    """
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """UPDATE leads
+                   SET opted_out = TRUE, opted_out_at = %s
+                   WHERE email = %s
+                   RETURNING id, email""",
+                (datetime.utcnow(), body.email)
+            )
+            row = cur.fetchone()
+            conn.commit()
+
+            if row:
+                logger.info("lead_opted_out", email=body.email, lead_id=row[0])
+                return OptOutResponse(
+                    success=True,
+                    email=body.email,
+                    message=f"Lead {body.email} has been opted out successfully."
+                )
+            else:
+                logger.warning("opt_out_email_not_found", email=body.email)
+                return OptOutResponse(
+                    success=False,
+                    email=body.email,
+                    message=f"No lead found with email {body.email}."
+                )
+    except Exception as e:
+        conn.rollback()
+        logger.error("opt_out_error", error=str(e), email=body.email)
+        raise HTTPException(status_code=500, detail=f"Opt-out failed: {str(e)}")
+    finally:
+        return_db_connection(conn)
+
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
-    return {"status": "ok", "service": "lead_receiver", "version": "2.0"}
+    return {"status": "ok", "service": "lead_receiver", "version": "2.1"}
 
 
 @app.get("/metrics")

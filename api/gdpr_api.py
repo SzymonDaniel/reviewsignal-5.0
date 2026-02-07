@@ -5,7 +5,7 @@ ReviewSignal 5.0
 FastAPI router for GDPR compliance endpoints.
 """
 
-from fastapi import APIRouter, HTTPException, Query, Request, Depends
+from fastapi import APIRouter, HTTPException, Query, Request, Depends, Header
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field, EmailStr
 from typing import Optional, List, Dict, Any
@@ -21,6 +21,26 @@ from compliance.gdpr import GDPRService
 from compliance.gdpr.models import ConsentTypeEnum, RequestTypeEnum
 
 logger = structlog.get_logger("gdpr.api")
+
+# API key for GDPR endpoint authentication
+GDPR_API_KEY = os.getenv("GDPR_API_KEY", os.getenv("API_KEY", ""))
+
+
+async def verify_gdpr_api_key(
+    x_api_key: str = Header(..., description="API Key for GDPR endpoint authentication")
+) -> str:
+    """Verify API key for GDPR endpoints. Rejects requests without a valid key."""
+    if not GDPR_API_KEY:
+        raise HTTPException(
+            status_code=503,
+            detail="GDPR API key not configured on server"
+        )
+    if x_api_key != GDPR_API_KEY:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid API key"
+        )
+    return x_api_key
 
 # Create router
 router = APIRouter(prefix="/gdpr", tags=["GDPR Compliance"])
@@ -170,6 +190,8 @@ async def grant_consent(
     body: ConsentRequest,
     request: Request,
     service: GDPRService = Depends(get_gdpr_service)
+,
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Grant consent for a specific type.
@@ -204,7 +226,8 @@ async def withdraw_consent(
     email: EmailStr = Query(..., description="Subject's email"),
     consent_type: str = Query(..., description="Type of consent to withdraw"),
     request: Request = None,
-    service: GDPRService = Depends(get_gdpr_service)
+    service: GDPRService = Depends(get_gdpr_service),
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Withdraw consent for a specific type.
@@ -230,7 +253,8 @@ async def withdraw_consent(
 @router.get("/consent/status", response_model=ConsentStatusResponse, summary="Get consent status")
 async def get_consent_status(
     email: EmailStr = Query(..., description="Subject's email"),
-    service: GDPRService = Depends(get_gdpr_service)
+    service: GDPRService = Depends(get_gdpr_service),
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Get all consent statuses for a subject.
@@ -246,7 +270,8 @@ async def get_consent_status(
 async def check_consent(
     email: EmailStr = Query(..., description="Subject's email"),
     consent_type: str = Query(..., description="Type of consent to check"),
-    service: GDPRService = Depends(get_gdpr_service)
+    service: GDPRService = Depends(get_gdpr_service),
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Check if a specific consent is valid.
@@ -272,6 +297,8 @@ async def create_request(
     body: GDPRRequestCreate,
     request: Request,
     service: GDPRService = Depends(get_gdpr_service)
+,
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Create a new GDPR request.
@@ -306,6 +333,8 @@ async def create_request(
 async def get_request(
     request_id: int,
     service: GDPRService = Depends(get_gdpr_service)
+,
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Get GDPR request status by ID.
@@ -323,7 +352,8 @@ async def process_request(
     request_id: int,
     performed_by: Optional[str] = Query(None, description="User processing the request"),
     request: Request = None,
-    service: GDPRService = Depends(get_gdpr_service)
+    service: GDPRService = Depends(get_gdpr_service),
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Process a pending GDPR request.
@@ -356,7 +386,8 @@ async def export_data(
     email: EmailStr = Query(..., description="Subject's email"),
     format: str = Query("json", description="Export format (json or csv)"),
     request: Request = None,
-    service: GDPRService = Depends(get_gdpr_service)
+    service: GDPRService = Depends(get_gdpr_service),
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Export all personal data for a subject (Art. 20 - Data Portability).
@@ -384,7 +415,8 @@ async def erase_data(
     email: EmailStr = Query(..., description="Subject's email"),
     dry_run: bool = Query(True, description="If true, only preview deletion"),
     request: Request = None,
-    service: GDPRService = Depends(get_gdpr_service)
+    service: GDPRService = Depends(get_gdpr_service),
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Erase all personal data for a subject (Art. 17 - Right to Erasure).
@@ -414,6 +446,8 @@ async def erase_data(
 @router.get("/requests/pending", summary="Get pending requests (admin)")
 async def get_pending_requests(
     service: GDPRService = Depends(get_gdpr_service)
+,
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Get all pending GDPR requests.
@@ -424,6 +458,8 @@ async def get_pending_requests(
 @router.get("/requests/overdue", summary="Get overdue requests (admin)")
 async def get_overdue_requests(
     service: GDPRService = Depends(get_gdpr_service)
+,
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Get all overdue GDPR requests (past 30-day deadline).
@@ -434,6 +470,8 @@ async def get_overdue_requests(
 @router.get("/retention/policies", summary="Get retention policies")
 async def get_retention_policies(
     service: GDPRService = Depends(get_gdpr_service)
+,
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Get all data retention policies.
@@ -444,6 +482,8 @@ async def get_retention_policies(
 @router.get("/retention/statistics", summary="Get retention statistics")
 async def get_retention_statistics(
     service: GDPRService = Depends(get_gdpr_service)
+,
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Get data retention statistics.
@@ -455,7 +495,8 @@ async def get_retention_statistics(
 async def run_retention_cleanup(
     table_name: Optional[str] = Query(None, description="Specific table to clean"),
     dry_run: bool = Query(True, description="If true, only preview"),
-    service: GDPRService = Depends(get_gdpr_service)
+    service: GDPRService = Depends(get_gdpr_service),
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Run data retention cleanup based on configured policies.
@@ -466,6 +507,8 @@ async def run_retention_cleanup(
 @router.get("/compliance/summary", summary="Get compliance summary")
 async def get_compliance_summary(
     service: GDPRService = Depends(get_gdpr_service)
+,
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Get GDPR compliance summary with statistics.
@@ -480,7 +523,8 @@ async def get_compliance_summary(
 @router.get("/rectification/preview", summary="Preview rectifiable data")
 async def preview_rectification(
     email: str = Query(..., description="Subject's email"),
-    service: GDPRService = Depends(get_gdpr_service)
+    service: GDPRService = Depends(get_gdpr_service),
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Preview what personal data can be rectified for a subject (Art. 16).
@@ -494,7 +538,8 @@ async def rectify_data(
     rectifications: Dict[str, Dict[str, Any]] = None,
     dry_run: bool = Query(True, description="If true, only preview changes"),
     request: Request = None,
-    service: GDPRService = Depends(get_gdpr_service)
+    service: GDPRService = Depends(get_gdpr_service),
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Rectify personal data for a subject (Art. 16).
@@ -528,7 +573,8 @@ async def rectify_email(
     new_email: str = Query(..., description="New email address"),
     dry_run: bool = Query(True, description="If true, only preview changes"),
     request: Request = None,
-    service: GDPRService = Depends(get_gdpr_service)
+    service: GDPRService = Depends(get_gdpr_service),
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Rectify (change) email address across all tables.
@@ -559,7 +605,8 @@ async def request_restriction(
     restricted_tables: Optional[str] = Query(None, description="Comma-separated tables to restrict"),
     expires_in_days: Optional[int] = Query(None, description="Days until restriction expires"),
     request: Request = None,
-    service: GDPRService = Depends(get_gdpr_service)
+    service: GDPRService = Depends(get_gdpr_service),
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Request processing restriction for a subject (Art. 18).
@@ -595,7 +642,8 @@ async def lift_restriction(
     lifted_by: str = Query(..., description="User lifting the restriction"),
     lift_reason: str = Query(..., description="Reason for lifting"),
     request: Request = None,
-    service: GDPRService = Depends(get_gdpr_service)
+    service: GDPRService = Depends(get_gdpr_service),
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Lift a processing restriction.
@@ -617,7 +665,8 @@ async def check_restriction(
     email: str = Query(..., description="Subject's email"),
     operation: Optional[str] = Query(None, description="Specific operation to check"),
     table: Optional[str] = Query(None, description="Specific table to check"),
-    service: GDPRService = Depends(get_gdpr_service)
+    service: GDPRService = Depends(get_gdpr_service),
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Check if processing is restricted for a subject.
@@ -628,7 +677,8 @@ async def check_restriction(
 @router.get("/restrictions", summary="Get active restrictions")
 async def get_active_restrictions(
     email: Optional[str] = Query(None, description="Filter by email"),
-    service: GDPRService = Depends(get_gdpr_service)
+    service: GDPRService = Depends(get_gdpr_service),
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Get all active processing restrictions.
@@ -643,6 +693,8 @@ async def get_active_restrictions(
 @router.post("/notifications/overdue-alerts", summary="Send overdue request alerts")
 async def send_overdue_alerts(
     service: GDPRService = Depends(get_gdpr_service)
+,
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Send email alerts to DPO about overdue GDPR requests.
@@ -653,7 +705,8 @@ async def send_overdue_alerts(
 @router.post("/notifications/consent-expiry", summary="Send consent expiry notifications")
 async def send_consent_expiry_notifications(
     days_before: int = Query(30, description="Days before expiry to notify"),
-    service: GDPRService = Depends(get_gdpr_service)
+    service: GDPRService = Depends(get_gdpr_service),
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Send notifications to subjects whose consent is expiring soon.
@@ -671,7 +724,8 @@ async def subscribe_webhook(
     url: str = Query(..., description="Webhook endpoint URL"),
     secret: str = Query(..., description="Secret for HMAC signature"),
     events: str = Query(..., description="Comma-separated events to subscribe to, or '*' for all"),
-    service: GDPRService = Depends(get_gdpr_service)
+    service: GDPRService = Depends(get_gdpr_service),
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Subscribe to GDPR webhook events.
@@ -696,6 +750,8 @@ async def subscribe_webhook(
 async def unsubscribe_webhook(
     subscription_id: int,
     service: GDPRService = Depends(get_gdpr_service)
+,
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Unsubscribe from GDPR webhooks.
@@ -706,6 +762,8 @@ async def unsubscribe_webhook(
 @router.get("/webhooks", summary="List webhook subscriptions")
 async def list_webhooks(
     service: GDPRService = Depends(get_gdpr_service)
+,
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     List all webhook subscriptions.
@@ -718,7 +776,8 @@ async def get_webhook_logs(
     subscription_id: Optional[int] = Query(None, description="Filter by subscription"),
     event_type: Optional[str] = Query(None, description="Filter by event type"),
     limit: int = Query(100, description="Max results"),
-    service: GDPRService = Depends(get_gdpr_service)
+    service: GDPRService = Depends(get_gdpr_service),
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Get webhook delivery logs for debugging.
@@ -757,6 +816,8 @@ async def health_check(
 async def download_export(
     filename: str,
     service: GDPRService = Depends(get_gdpr_service)
+,
+    api_key: str = Depends(verify_gdpr_api_key)
 ):
     """
     Download an exported data file.

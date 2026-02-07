@@ -20,8 +20,10 @@ from datetime import datetime
 import structlog
 import json
 
-from modules.payment_processor import StripePaymentProcessor, WebhookEvent
+from modules.payment_processor import StripePaymentProcessor, WebhookEvent, SubscriptionTier
 from modules.db import get_connection, return_connection
+from modules.email_sender import EmailSender
+from modules.payment_processor import SubscriptionTier
 
 logger = structlog.get_logger()
 
@@ -42,6 +44,142 @@ if STRIPE_API_KEY and STRIPE_WEBHOOK_SECRET:
         logger.info("stripe_processor_initialized")
     except Exception as e:
         logger.error("stripe_init_error", error=str(e))
+
+# Initialize email sender (lazy - won't fail if no API key)
+_email_sender = None
+
+def get_email_sender() -> EmailSender:
+    """Get or create email sender instance."""
+    global _email_sender
+    if _email_sender is None:
+        try:
+            _email_sender = EmailSender()
+        except Exception as e:
+            logger.warning("email_sender_init_failed", error=str(e))
+    return _email_sender
+
+
+def _get_customer_info(customer_id: str) -> dict:
+    """Fetch customer name and email from Stripe or database."""
+    # Try Stripe first
+    if stripe_processor:
+        try:
+            customer = stripe_processor.get_customer(customer_id)
+            if customer:
+                return {"email": customer.email, "name": customer.name or "Valued Customer"}
+        except Exception:
+            pass
+    # Fallback: query database
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT email, name FROM users WHERE stripe_customer_id = %s", (customer_id,))
+            row = cur.fetchone()
+            if row:
+                return {"email": row[0], "name": row[1] or "Valued Customer"}
+    except Exception:
+        pass
+    finally:
+        return_connection(conn)
+    return {}
+
+
+def _send_subscription_welcome(customer_id: str, subscription_data: dict):
+    """Send welcome email for new subscription. Called as background task."""
+    sender = get_email_sender()
+    if not sender:
+        return
+    info = _get_customer_info(customer_id)
+    if not info.get("email"):
+        logger.warning("welcome_email_skipped_no_email", customer_id=customer_id)
+        return
+    tier_name = subscription_data.get("tier", "pro").capitalize()
+    # Look up features from pricing tiers
+    tier_enum = None
+    for t in SubscriptionTier:
+        if t.value == subscription_data.get("tier", "pro"):
+            tier_enum = t
+            break
+    features = []
+    if tier_enum and tier_enum in StripePaymentProcessor.PRICING_TIERS:
+        features = StripePaymentProcessor.PRICING_TIERS[tier_enum].features
+    else:
+        features = ["Access to ReviewSignal platform", "Sentiment analysis reports", "API access"]
+    try:
+        result = sender.send_welcome_email(
+            customer_email=info["email"],
+            customer_name=info["name"],
+            tier_name=tier_name,
+            features=features
+        )
+        logger.info("welcome_email_sent", customer_id=customer_id, success=result.get("success"))
+    except Exception as e:
+        logger.error("welcome_email_failed", customer_id=customer_id, error=str(e))
+
+
+def _send_payment_failed(event_data: dict):
+    """Send payment failed email. Called as background task."""
+    sender = get_email_sender()
+    if not sender:
+        return
+    customer_id = event_data.get("customer")
+    if not customer_id:
+        return
+    info = _get_customer_info(customer_id)
+    if not info.get("email"):
+        logger.warning("payment_failed_email_skipped_no_email", customer_id=customer_id)
+        return
+    amount_cents = event_data.get("amount_due", 0) or event_data.get("amount", 0) or 0
+    amount_eur = amount_cents / 100 if amount_cents > 100 else amount_cents  # Handle if already in EUR
+    next_attempt = event_data.get("next_payment_attempt", "within 3-5 business days")
+    if isinstance(next_attempt, (int, float)):
+        from datetime import datetime as dt
+        next_attempt = dt.fromtimestamp(next_attempt).strftime("%Y-%m-%d")
+    try:
+        result = sender.send_payment_failed_email(
+            customer_email=info["email"],
+            customer_name=info["name"],
+            amount=amount_eur,
+            retry_date=str(next_attempt)
+        )
+        logger.info("payment_failed_email_sent", customer_id=customer_id, success=result.get("success"))
+    except Exception as e:
+        logger.error("payment_failed_email_error", customer_id=customer_id, error=str(e))
+
+
+def _send_invoice_paid(event_data: dict):
+    """Send invoice receipt email. Called as background task."""
+    sender = get_email_sender()
+    if not sender:
+        return
+    customer_id = event_data.get("customer")
+    if not customer_id:
+        return
+    info = _get_customer_info(customer_id)
+    if not info.get("email"):
+        logger.warning("invoice_email_skipped_no_email", customer_id=customer_id)
+        return
+    amount_cents = event_data.get("amount_paid", 0) or 0
+    amount_eur = amount_cents / 100 if amount_cents > 100 else amount_cents
+    invoice_data = {
+        "invoice_number": event_data.get("invoice_id", event_data.get("number", "N/A")),
+        "date": datetime.now().strftime("%Y-%m-%d"),
+        "amount": amount_eur,
+        "currency": "EUR",
+        "tier": "Pro",
+        "period": "Monthly",
+        "payment_method": "Card on file",
+        "invoice_pdf_url": event_data.get("invoice_pdf", "")
+    }
+    try:
+        result = sender.send_invoice_email(
+            customer_email=info["email"],
+            customer_name=info["name"],
+            invoice_data=invoice_data
+        )
+        logger.info("invoice_email_sent", customer_id=customer_id, success=result.get("success"))
+    except Exception as e:
+        logger.error("invoice_email_error", customer_id=customer_id, error=str(e))
 
 
 class WebhookEventLog(BaseModel):
@@ -299,11 +437,23 @@ async def stripe_webhook(request: Request, background_tasks: BackgroundTasks):
         background_tasks.add_task(process_payment_success, event_data)
 
     elif event_type == WebhookEvent.SUBSCRIPTION_CREATED.value:
+        # Determine tier from the subscription's price_id
+        price_id = event_data.get('price_id', '')
+        matched_tier = StripePaymentProcessor.get_tier_by_price_id(price_id)
+        if matched_tier:
+            tier_name = matched_tier.value
+            pricing = StripePaymentProcessor.PRICING_TIERS[matched_tier]
+            amount = pricing.amount_cents
+        else:
+            logger.warning("webhook_unknown_price_id", price_id=price_id)
+            tier_name = 'starter'
+            amount = 250000  # fallback to starter
+
         subscription_data = {
             'subscription_id': event_data.get('subscription_id'),
-            'tier': 'pro',  # Default, should be determined by price_id
+            'tier': tier_name,
             'status': event_data.get('status'),
-            'amount': 500000,  # €5000 in cents
+            'amount': amount,
             'currency': 'eur',
             'interval': 'month'
         }
@@ -334,6 +484,12 @@ async def stripe_webhook(request: Request, background_tasks: BackgroundTasks):
             'subscription': event_data.get('subscription')
         }
         background_tasks.add_task(process_payment_success, payment_data)
+        # Send invoice receipt email (non-blocking)
+        background_tasks.add_task(_send_invoice_paid, event_data)
+
+    elif event_type == WebhookEvent.INVOICE_FAILED.value:
+        # Send payment failed email (non-blocking)
+        background_tasks.add_task(_send_payment_failed, event_data)
 
     return {
         "success": True,

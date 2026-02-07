@@ -848,7 +848,7 @@ class TestGoogleMapsRealScraper:
         assert places == []
 
     def test_get_place_details_success(self, scraper, mock_googlemaps_client):
-        """Should get detailed place information"""
+        """Should get detailed place information (multi-sort fetches 2x)"""
         place = scraper.get_place_details('test_place_1')
 
         assert place is not None
@@ -856,6 +856,15 @@ class TestGoogleMapsRealScraper:
         assert place.name == 'Starbucks Coffee'
         assert len(place.reviews) > 0
 
+        # Multi-sort makes 2 API calls (most_relevant + newest)
+        assert scraper.client.place.call_count == 2
+
+    def test_get_place_details_single_sort(self, scraper, mock_googlemaps_client):
+        """Should get details with single sort (legacy behavior, 1 API call)"""
+        place = scraper.get_place_details('test_place_1', multi_sort_reviews=False)
+
+        assert place is not None
+        assert place.place_id == 'test_place_1'
         scraper.client.place.assert_called_once()
 
     def test_get_place_details_with_cache_hit(self, mock_googlemaps_client, mock_redis):
@@ -896,14 +905,15 @@ class TestGoogleMapsRealScraper:
             scraper.client.place.assert_not_called()
 
     def test_get_place_details_cache_miss(self, scraper):
-        """Should fetch from API on cache miss"""
+        """Should fetch from API on cache miss (multi-sort makes 2 calls)"""
         if scraper.cache:
             scraper.cache.get = Mock(return_value=None)
 
         place = scraper.get_place_details('test_place_1')
 
         assert place is not None
-        scraper.client.place.assert_called_once()
+        # Multi-sort makes 2 API calls (most_relevant + newest)
+        assert scraper.client.place.call_count == 2
 
     def test_get_place_reviews(self, scraper):
         """Should get reviews for a place"""

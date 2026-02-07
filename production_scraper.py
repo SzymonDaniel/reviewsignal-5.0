@@ -14,7 +14,9 @@ import os
 
 from modules.real_scraper import GoogleMapsRealScraper
 from modules.db import get_connection, return_connection
+from modules.data_validator import LocationValidator, ReviewValidator
 from config import GOOGLE_MAPS_API_KEY, REDIS_URL, CHAINS, ALL_CITIES
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 logger = structlog.get_logger()
 
@@ -32,10 +34,13 @@ class ProductionScraper:
 
         self.stats = {
             "locations_added": 0,
+            "locations_validation_failed": 0,
             "reviews_added": 0,
+            "reviews_validation_failed": 0,
             "errors": 0,
             "start_time": datetime.now()
         }
+        self._sentiment_analyzer = SentimentIntensityAnalyzer()
 
     def get_db_connection(self):
         """Get PostgreSQL connection from shared pool."""
@@ -46,7 +51,7 @@ class ProductionScraper:
         return_connection(conn)
 
     def save_location(self, place) -> bool:
-        """Save location to database"""
+        """Save location to database with validation gate"""
         try:
             conn = self.get_db_connection()
             cur = conn.cursor()
@@ -65,6 +70,23 @@ class ProductionScraper:
             phone = place.phone if hasattr(place, 'phone') else place.get('phone')
             website = place.website if hasattr(place, 'website') else place.get('website')
             business_status = place.business_status if hasattr(place, 'business_status') else place.get('business_status', 'OPERATIONAL')
+
+            # --- VALIDATION GATE ---
+            loc_dict = {
+                "name": name, "place_id": place_id, "address": address,
+                "city": city, "country": country,
+                "latitude": latitude, "longitude": longitude,
+                "rating": rating,
+            }
+            valid, issues = LocationValidator.validate(loc_dict)
+            if not valid:
+                self.stats["locations_validation_failed"] += 1
+                logger.warning("location_validation_failed", place_id=place_id, name=name, issues=issues)
+                cur.close()
+                self.return_db_connection(conn)
+                return False
+            # Apply auto-fixed country back
+            country = loc_dict.get("country", country)
 
             # Check if location exists
             cur.execute(
@@ -134,6 +156,16 @@ class ProductionScraper:
                     time = review.get('time') if isinstance(review, dict) else review.time
                     language = review.get('language', 'en') if isinstance(review, dict) else review.language
 
+                    # --- REVIEW VALIDATION GATE ---
+                    rev_dict = {"text": text, "rating": rating, "author_name": author_name}
+                    rev_valid, rev_issues = ReviewValidator.validate(rev_dict)
+                    if not rev_valid:
+                        self.stats["reviews_validation_failed"] += 1
+                        logger.debug("review_validation_failed", place_id=place_id, issues=rev_issues)
+                        continue
+                    # Apply auto-scored sentiment from validator
+                    sentiment_score = rev_dict.get("sentiment_score")
+
                     # Check if review exists
                     review_hash = f"{place_id}_{author_name}_{time}"
 
@@ -144,21 +176,27 @@ class ProductionScraper:
                     if cur.fetchone():
                         continue  # Skip existing
 
-                    # Insert new review
+                    # Compute sentiment if validator did not set it
+                    if sentiment_score is None and text and text.strip():
+                        sentiment_score = round(
+                            self._sentiment_analyzer.polarity_scores(text)["compound"], 4
+                        )
+
+                    # Insert new review with sentiment
                     cur.execute("""
                         INSERT INTO reviews (
                             location_id, place_id, author_name, rating,
                             text, time_posted, language, source,
-                            review_hash, created_at
+                            sentiment_score, review_hash, created_at
                         ) VALUES (
                             %s, %s, %s, %s,
                             %s, to_timestamp(%s), %s, %s,
-                            %s, NOW()
+                            %s, %s, NOW()
                         )
                     """, (
                         location_id, place_id, author_name, rating,
                         text, time, language, 'google_maps',
-                        review_hash
+                        sentiment_score, review_hash
                     ))
                     saved += 1
 
@@ -289,7 +327,9 @@ class ProductionScraper:
         logger.info("="*70)
         logger.info(f"📊 Cycle complete!")
         logger.info(f"   Locations added: {self.stats['locations_added']}")
+        logger.info(f"   Locations validation failed: {self.stats['locations_validation_failed']}")
         logger.info(f"   Reviews added: {self.stats['reviews_added']}")
+        logger.info(f"   Reviews validation failed: {self.stats['reviews_validation_failed']}")
         logger.info(f"   Errors: {self.stats['errors']}")
         logger.info(f"   Runtime: {runtime:.1f} minutes")
         logger.info("="*70)

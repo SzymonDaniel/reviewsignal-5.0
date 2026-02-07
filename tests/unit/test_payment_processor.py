@@ -558,23 +558,38 @@ class TestWebhookHandling:
 
     def test_handle_webhook_invalid_signature(self, payment_processor, mock_stripe):
         """Should reject webhook with invalid signature"""
-        mock_stripe.Webhook.construct_event.side_effect = Exception("Invalid signature")
+        mock_stripe.Webhook.construct_event.side_effect = ValueError("Invalid payload")
 
         payload = b'{"type": "test"}'
         signature = 'invalid_signature'
 
         result = payment_processor.handle_webhook(payload, signature)
 
-        assert result is None or 'error' in str(result)
+        assert 'error' in result
 
-    def test_verify_webhook_signature_valid(self, payment_processor):
-        """Should verify valid webhook signature"""
+    def test_handle_webhook_delegates_to_construct_event(self, payment_processor, mock_stripe):
+        """Should delegate signature verification to construct_event"""
+        mock_event = {
+            'id': 'evt_test_sig',
+            'type': 'payment_intent.succeeded',
+            'data': {
+                'object': {
+                    'id': 'pi_test_sig',
+                    'amount': 10000,
+                    'customer': 'cus_test_sig'
+                }
+            }
+        }
+        mock_stripe.Webhook.construct_event.return_value = mock_event
+
         payload = b'test_payload'
         signature = 'test_signature'
 
-        with patch.object(payment_processor, '_verify_webhook_signature', return_value=True):
-            result = payment_processor._verify_webhook_signature(payload, signature)
-            assert result is True
+        result = payment_processor.handle_webhook(payload, signature)
+        mock_stripe.Webhook.construct_event.assert_called_once_with(
+            payload, signature, payment_processor.webhook_secret
+        )
+        assert result['processed'] is True
 
     def test_process_webhook_event_payment_success(self, payment_processor):
         """Should process payment success event"""

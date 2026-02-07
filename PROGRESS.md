@@ -1,6 +1,260 @@
 # PROGRESS.md - Log postępu prac
 
-**Last Updated:** 2026-02-07 10:00 UTC
+**Last Updated:** 2026-02-07 14:00 UTC
+
+---
+
+## 2026-02-07 14:00 UTC - DATA QUALITY 100% (4 agenty rownolegly)
+
+### Lokalizacje:
+- [x] Country: 10.1% -> 100.0% (40,104 lokalizacji naprawionych!)
+- [x] Quality score: 87.2% POOR -> 0% POOR (avg 82/100)
+- [x] City: 68.6% -> 69.2% (+283 z adresow)
+- [x] Review count synced (11,935 lokalizacji poprawionych)
+
+### Recenzje:
+- [x] Duplikaty: 2,462 -> 0 (unique index zapobiega nowym)
+- [x] Orphany: 105 -> 0 (NULL location_id usunięte)
+- [x] Krótkie (<3 chars): 199 usunietych
+- [x] Sentiment: 99.5% -> 100.0% (358 doscorowanych)
+- [x] Rating: 100%, Text: 100%, Location: 100%
+- [x] TOTAL: 69,048 -> 66,282 (clean)
+
+### Leady:
+- [x] Industry: 3.3% -> 100.0% (737/737)
+- [x] Company_domain: 0.1% -> 99.6% (734/737)
+- [x] Company_size: 0% -> 100.0% (737/737)
+- [x] Company_name: 0% -> 100.0%
+- [x] Enriched_at: 0% -> 100.0%
+- [x] Personalized_angle: 96.5% -> 100.0%
+
+### Bramki jakości (nowe):
+- [x] modules/data_validator.py (320 LOC, 3 walidatory)
+- [x] Podłączone do: production_scraper, lead_receiver, coverage_scraper, accelerated_coverage
+- [x] Auto-fix: country z adresu/coords, sentiment z VADER, blokada test leads
+
+### Nowe skrypty:
+- scripts/fix_location_data.py
+- scripts/data_quality_validator.py
+- scripts/clean_duplicate_reviews.py
+- scripts/enrich_leads.py (628 LOC)
+- modules/data_validator.py (320 LOC)
+
+---
+
+## 2026-02-07 13:42 UTC - LEAD DATA ENRICHMENT
+
+### What was done:
+- [x] **Created `scripts/enrich_leads.py`** - comprehensive lead enrichment script
+- [x] **company_domain extracted from email:** 733 leads (0.1% -> 99.6%)
+- [x] **company backfilled from email domain:** 9 leads with empty company field
+- [x] **company_name populated from company:** 737 leads (0% -> 100%)
+- [x] **industry inferred from company name:** 712 leads (3.3% -> 100%)
+- [x] **company_size inferred from known companies:** 737 leads (0% -> 100%)
+- [x] **personalized_angle generated:** 26 leads missing angles (96.5% -> 100%)
+- [x] **enriched_at timestamp set:** 737 leads (0% -> 100%)
+- [x] **Industry values normalized:** lowercase/inconsistent -> title case
+
+### Before vs After:
+| Field | Before | After | Change |
+|-------|--------|-------|--------|
+| industry | 3.3% | 100.0% | +96.7% |
+| company_domain | 0.1% | 99.6% | +99.5% |
+| company_size | 0.0% | 100.0% | +100.0% |
+| enriched_at | 0.0% | 100.0% | +100.0% |
+| company_name | 0.0% | 100.0% | +100.0% |
+| personalized_angle | 96.5% | 100.0% | +3.5% |
+| company | 98.8% | 100.0% | +1.2% |
+
+### Industry Breakdown:
+- Hedge Fund: 625 (84.8%)
+- Asset Management: 47 (6.4%)
+- Private Equity: 28 (3.8%)
+- Financial Services: 19 (2.6%)
+- Investment Banking: 7 (0.9%)
+- Other: 11 (1.5%)
+
+### Files:
+- **Created:** `scripts/enrich_leads.py` (idempotent, uses modules/db.py)
+- Script is re-runnable: second run makes 0 changes
+
+---
+
+## 2026-02-07 13:41 UTC - LOCATION DATA QUALITY FIX
+
+### What was done:
+- [x] **Country extraction from addresses:** 18,553 locations fixed (parsed last comma token)
+- [x] **Country extraction from coordinates:** 21,555 locations fixed (bounding box geocoding)
+- [x] **Country normalization:** 122 locations ("Germany" -> "DE" etc.)
+- [x] **Manual fix for edge cases:** 5 remaining (Curacao, Togo, Fiji)
+- [x] **City extraction from addresses:** 283 additional cities parsed
+- [x] **Review count correction:** 11,935 locations had review_count synced with actual reviews
+- [x] **Data quality scores updated:** All 44,628 locations scored (0-100)
+
+### Results:
+- **Country: 10.1% -> 100.0%** (was 4,515/44,619, now 44,628/44,628)
+- **City: 68.6% -> 69.2%** (30,618 -> 30,901; remaining 13,727 have no address to parse)
+- **Rating: 42.6% -> 42.7%** (no reviews found for NULL-rating locations)
+- **Quality score distribution:**
+  - A+ (90-100): 19,001 (42.6%)
+  - A (80-89): 33 (0.1%)
+  - B (70-79): 11,943 (26.8%)
+  - C (60-69): 13,651 (30.6%)
+  - POOR (<50): 0 (0.0%)
+- Average quality score: 82.0/100
+
+### Files created:
+- `scripts/fix_location_data.py` - comprehensive country/city/rating fixer
+- `scripts/data_quality_validator.py` - quality scoring and distribution reporter
+
+---
+
+## 2026-02-07 13:37 UTC - REVIEW DATA QUALITY CLEANUP
+
+### What was done:
+- [x] **Duplicate reviews removed:** 2,462 excess rows (2,434 groups) - kept oldest per (text, location_id)
+- [x] **Orphan reviews removed:** 105 rows with NULL location_id (no place_id to match)
+- [x] **Short reviews removed:** 199 rows with text < 3 chars (emojis, "Ok", empty strings)
+- [x] **Sentiment scoring:** 358 remaining NULL sentiment_score reviews scored via VADER
+- [x] **Dedup prevention index:** Created `idx_reviews_text_location_unique` (md5(text), location_id) UNIQUE
+
+### Results:
+- Before: 69,048 reviews
+- After: 66,282 reviews (removed 2,766 = 4.0%)
+- All quality metrics now at 100%:
+  - sentiment_score: 66,282/66,282 (100%)
+  - rating: 66,282/66,282 (100%)
+  - text (>=3 chars): 66,282/66,282 (100%)
+  - location_id: 66,282/66,282 (100%)
+  - source: 66,282/66,282 (100%)
+  - Duplicates: 0
+  - Orphans: 0
+- Avg rating: 3.08, Avg sentiment: +0.3031
+
+### Files created:
+- `scripts/clean_duplicate_reviews.py` - reusable cleanup script with --dry-run
+
+---
+
+## 2026-02-07 13:00 UTC - 10 KRYTYCZNYCH NAPRAW (10 agentow rownolegych)
+
+### Naprawione problemy:
+
+**1. GDPR Compliance (Agent 1):**
+- [x] Unsubscribe link + adres fizyczny dodany do WSZYSTKICH 23 emaili (4 txt + 19 JSON steps)
+- [x] Privacy Policy stworzona (docs/legal/PRIVACY_POLICY.md, 11 KB)
+- [x] Legitimate Interest Assessment (docs/legal/LEGITIMATE_INTEREST_ASSESSMENT.md, 11 KB)
+- [x] Auth dodany do 29 endpointow GDPR API (X-API-Key header)
+- [x] Kolumna opted_out + opted_out_at dodana do leads table
+- [x] Endpoint POST /api/leads/opt-out stworzony
+- [x] Consent check przed sync do Instantly
+
+**2. Echo Engine (Agent 2):**
+- [x] Zatrzymany runaway process (255% CPU, 1.54 GB RAM)
+- [x] Dodano MemoryMax=1G + MemoryHigh=800M do systemd
+- [x] Usunietyo hardcoded DB_PASS i JWT_SECRET z service file
+- [x] Dodano EnvironmentFile=.env
+- [x] Restart + weryfikacja: 255 MB RAM, /health healthy
+
+**3. Systemd Secrets (Agent 3):**
+- [x] lead-receiver.service: usunieto 7 hardcoded secrets, dodano EnvironmentFile
+- [x] reviewsignal-agent.service: usunieto ANTHROPIC_API_KEY, GOOGLE_MAPS_API_KEY
+- [x] postgres_exporter.service: wrapper script z dynamicznym DATA_SOURCE_NAME
+- [x] daemon-reload + lead-receiver restart + health verified
+
+**4. Instantly Integration (Agent 4):**
+- [x] Env var naming OK (nie bylo mismatch)
+- [x] Usunieto 5 test leadow (742 -> 737)
+- [x] 15 unsegmented leadow zsegmentowanych (0 NULL remaining)
+- [x] Stworzono scripts/instantly_bulk_sync.py (460 LOC, --dry-run, --limit, rate limiting)
+
+**5. Stripe Configuration (Agent 5):**
+- [x] Price IDs przeniesione do env vars (os.getenv z fallback)
+- [x] Webhook tier detection: dynamiczny lookup zamiast hardcoded "pro"
+- [x] Dodano get_tier_by_price_id() classmethod
+- [x] Usunieto podwojna weryfikacje sygnatury webhook
+- [x] Stripe env vars dodane do .env
+
+**6. Email System (Agent 6):**
+- [x] Zainstalowano pakiet resend + dodano do requirements.txt
+- [x] Podlaczono send_report_email() do email_sender module
+- [x] Zarejestrowano monthly report cron (1st of month 09:00 UTC)
+- [x] Zarejestrowano gdpr_daily_check cron (daily 03:00 UTC)
+
+**7. Scraper Review Cap (Agent 7):**
+- [x] Multi-sort reviews: most_relevant + newest = do 10 reviews/location (2x)
+- [x] Backward compatible (multi_sort_reviews=True domyslnie)
+- [x] Stworzono scripts/rescrape_reviews.py (--chain-name, --limit, --dry-run)
+- [x] Nowy test: test_get_place_details_single_sort
+
+**8. Sentiment Pipeline (Agent 8):**
+- [x] Stworzono scripts/batch_sentiment_scorer.py (VADER, 868 rev/s)
+- [x] Przescorowano 68,494 recenzji (99.7% coverage, 75s)
+- [x] Inline scoring dodany do production_scraper.py
+- [x] Daily cron (03:30 UTC, --limit 10000)
+- [x] Korelacja potwierdzona: 1 star=-0.286, 5 star=+0.817
+
+**9. Location Coverage (Agent 9):**
+- [x] Stworzono scripts/accelerated_coverage.py (274 LOC, ThreadPoolExecutor)
+- [x] Zescrapowano Walgreens: 450 lok, 2,238 recenzji, 0 bledow
+- [x] Coverage: 27.9% -> 28.9%
+- [x] Burger King DE mapping OK (juz naprawiony)
+- [x] Leady 100% zsegmentowane
+
+**10. Subscription Lifecycle (Agent 10):**
+- [x] 4 nowe metody email: welcome, trial_ending, payment_failed, invoice
+- [x] Webhook events podlaczone do emaili (subscription.created, invoice.paid/failed)
+- [x] Stworzono scripts/check_trial_expiration.py (249 LOC)
+- [x] Raporty proporcjonalne do planu: starter=basic/5 miast, pro=30/anomaly, enterprise=premium/all
+
+### Wynik: 282 unit testow passed (0 failures)
+
+### Nowe pliki:
+- docs/legal/PRIVACY_POLICY.md
+- docs/legal/LEGITIMATE_INTEREST_ASSESSMENT.md
+- scripts/instantly_bulk_sync.py
+- scripts/batch_sentiment_scorer.py
+- scripts/accelerated_coverage.py
+- scripts/rescrape_reviews.py
+- scripts/check_trial_expiration.py
+- scripts/add_opted_out_column.py
+
+---
+
+## 2026-02-07 12:00 UTC - MEGA AUDYT SYSTEMU (6 agentow rownolegych)
+
+### Zakres audytu:
+- Kod i moduly (52 pliki Python)
+- Logika biznesowa (Stripe, subskrypcje, raporty)
+- Jakosc danych (reviews, locations, leads, chains)
+- GDPR i compliance
+- Serwisy i integracje (7 serwisow, Apollo, Instantly, n8n)
+- Email templates i automatyzacja subskrypcji
+
+### Wyniki:
+| Obszar | Ocena |
+|--------|-------|
+| Kod / Moduly | 7.5/10 |
+| Logika biznesowa | 3/10 |
+| Jakosc danych | 5/10 |
+| GDPR / Compliance | 2/10 |
+| Serwisy / Infra | 6/10 |
+| Email / Automatyzacja | 2/10 |
+| **OGOLNA** | **4.2/10** |
+
+### Krytyczne ustalenia:
+1. Echo Engine zalamany: 255% CPU, 1.54 GB RAM, /health timeout
+2. Hardcoded sekrety w 4 plikach systemd (DB_PASS, Anthropic key, Instantly key)
+3. GDPR: 0 consent, 0 privacy policy, 0 DPA, 0 unsubscribe w emailach
+4. 0 leadow wyslanych do Instantly (742 czeka)
+5. Stripe NIE skonfigurowany (nie mozna przyjmowac platnosci)
+6. Email delivery NIE dziala (RESEND_API_KEY = placeholder)
+7. 99.8% recenzji bez sentiment score
+8. Scraper max 5 recenzji/lokalizacje (limit Google API)
+9. 72.6% lokalizacji bez jakichkolwiek recenzji
+10. Naming mismatch w env vars dla Instantly campaigns
+
+### Raport: docs/audits/MEGA_AUDIT_2026-02-07.md
 
 ---
 
